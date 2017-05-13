@@ -52,7 +52,7 @@ void writePipe(char* nomePipe, char* str) {
 
 	do {
 		fd = open(nomePipe, O_WRONLY);
-		returnErrno() /* Open it for reading */
+		//returnErrno(); /* Open it for reading */
 	} while (fd == -1);
 
 	write (fd, str, strlen(str)); /* Write message down pipe */
@@ -93,8 +93,6 @@ int main (int argc, char* argv[])
 	pipeLettura = (char*)calloc(PIPELEN, sizeof(char));
 	pipeScrittura = (char*)calloc(PIPELEN, sizeof(char));
 	
-	
-
 	snprintf(pipeLettura, PIPELEN, "%s%s", "assets/Lettura_", argv[1]);
 	snprintf(pipeScrittura, PIPELEN, "%s%s", "assets/Scrittura_", argv[1]);
 

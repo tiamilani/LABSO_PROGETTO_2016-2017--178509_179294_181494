@@ -30,12 +30,12 @@ int readLine (int idPipeLettura,char *str) {
 	/* Read a single '\0'-terminated line into str from fd */
 	/* Return 0 when the end-of-input is reached and 1 otherwise */
 	
-	fd_set set;
+	/*fd_set set;
 	struct timeval timeout;
 	int ris;
 	
-	FD_ZERO(&set); /* clear the set */
-	FD_SET(idPipeLettura, &set); /* add our file descriptor to the set */
+	FD_ZERO(&set); // clear the set 
+	FD_SET(idPipeLettura, &set); // add our file descriptor to the set 
 
 	timeout.tv_sec = 0;
 	timeout.tv_usec = 10000;
@@ -46,16 +46,17 @@ int readLine (int idPipeLettura,char *str) {
 	else if(rv == 0)
 		return -1; //Codice gestione interna timeout
 	else
-		read(idPipeLettura, str, MAXLEN); /* there was data to read */
+		read(idPipeLettura, str, MAXLEN); // there was data to read 
 	
-	return 0;
+	return 0; */
 	
-	//int n;
+	int n;
 
-	/*
-	do {  Read characters until '\0' or end-of-input 
-		n = read(idPipeLettura, str, 1); Read one character 
-	} while (n > 0 && *str++ != '\0'); */
+	do {  //Read characters until '\0' or end-of-input 
+		n = read(idPipeLettura, str, 1); //Read one character 
+	} while (n > 0 && *str++ != '\0');
+	
+	return returnErrno();
 }
 
 int readPipe(Node* nodo,char *str) {
@@ -77,7 +78,7 @@ int readPipe(Node* nodo,char *str) {
 	return 0;
 }
 
-void writePipe(Node* nodo, char* str) {
+int writePipe(Node* nodo, char* str) {
 	do {
 		printf("CIAO\n");
 		nodo->idPipeScrittura = open(nodo->nomePipeScrittura, O_WRONLY); /* Open it for reading */
@@ -87,6 +88,8 @@ void writePipe(Node* nodo, char* str) {
 
 	write (nodo->idPipeScrittura, str, strlen(str)); /* Write message down pipe */
 	close(nodo->idPipeScrittura);
+	
+	return returnErrno();
 }
 
 int creaPipe(Node* nodo) {
@@ -94,7 +97,7 @@ int creaPipe(Node* nodo) {
 	unlink(nodo->nomePipeScrittura);
 	
 	errno = 0;
-
+	
 	mknod(nodo->nomePipeLettura, S_IFIFO, 0); /* Create named pipe */
 	chmod(nodo->nomePipeLettura, 0666); /* Change its permissions */
 
@@ -141,10 +144,7 @@ char* getFatherName(Node* n) {
 	return getName(n->father);
 }
 
-char* pinfo(Node* n) {
-	char* str = (char*)calloc(LONGLEN, sizeof(char));
-	if(str == NULL)
-		return 9;
+int pinfo(Node* n, char* str) {
 	
 	int spacing = 0;
 	int i;
@@ -182,7 +182,7 @@ char* pinfo(Node* n) {
 		strcat(str," ");
 	
 	strcat(str, getFatherPid(n));
-	return str;
+	return 0;
 }
 
 void plist(Node* nodo,char* ch) {
@@ -311,7 +311,6 @@ int pnew(Node *start, char* nome,int signalChildren) { //SignalChildren 0 faccio
 	if(strpid == NULL)
 		return 8;
 		
-	int tentativi = 0;
 	char* test = (char*)calloc(MAXLEN, sizeof(char));
 	if(test == NULL)
 		return 8;
@@ -320,12 +319,13 @@ int pnew(Node *start, char* nome,int signalChildren) { //SignalChildren 0 faccio
 
 	if(creaPipe(n) != 0)
 	{
-		chiudiPipe();
+		chiudiPipe(n);
 		return 8;
 	}
 
 	if(signalChildren == 0)
 	{
+		
 		int p = fork();
 		if(p == 0)
 			execl("build/child", n->name, strpid, (char*) NULL);
@@ -346,7 +346,12 @@ int pnew(Node *start, char* nome,int signalChildren) { //SignalChildren 0 faccio
 
 		if(writePipe(start, message) != 0)
 			return 8;
-			
+		
+		int k = readPipe(start,test);
+		if(k != 0 && k != -1)
+			return 10;
+		printf("%s\n", test);
+		/*
 		tentativi = 0;
 	
 		do{
@@ -366,10 +371,18 @@ int pnew(Node *start, char* nome,int signalChildren) { //SignalChildren 0 faccio
 		}while(tentativi < 3)
 
 		if(tentativi == 3)
-			return 10;
+			return 10;*/
 	}
 
-	tentativi = 0;
+	test = (char*)calloc(MAXLEN, sizeof(char));
+	if(test == NULL)
+		return 8;
+	int k = readPipe(n,test);
+	if(k != 0 && k != -1)
+		return 10;
+	printf("%s\n", test);
+	
+	/*tentativi = 0;
 	
 	do{
 		int k = readPipe(n,test)
@@ -388,7 +401,7 @@ int pnew(Node *start, char* nome,int signalChildren) { //SignalChildren 0 faccio
 	}while(tentativi < 3)
 
 	if(tentativi == 3)
-		return 10;
+		return 10;*/
 
 	//Riduco di una dimensione la memoria allocata al vettore dei figli
 	copiaVettore(vettoreFigli, start->figli, start->nFigli);
@@ -398,6 +411,7 @@ int pnew(Node *start, char* nome,int signalChildren) { //SignalChildren 0 faccio
 	start->figli = (Node**)calloc(start->nFigli, sizeof(Node));
 	if(start->figli == NULL)
 		return 10;
+		
 	//Ricopio il vettore originale
 	copiaVettore(start->figli, vettoreFigli, start->nFigli - 1);
 
@@ -438,8 +452,13 @@ int fatherCloseMe(Node* father, char *childName) {
 	if(writePipe(tmp, "EXIT") != 0)
 		return 9;
 	
-	int tentativi = 0;
+	//int tentativi = 0;
 	
+	int k = readPipe(tmp,test);
+	if(k != 0 && k != -1)
+		return 10;
+	printf("%s\n", test);
+	/*
 	do{
 		int k = readPipe(tmp,test)
 		if(k != 0 && k != -1)
@@ -459,7 +478,7 @@ int fatherCloseMe(Node* father, char *childName) {
 	if(tentativi == 3)
 		return 10;
 
-	chiudiPipe(tmp);
+	chiudiPipe(tmp);*/
 
 	//Sposto di una posizione tutti i figli che stanno alla destra del figlio che ho eliminato
 	spostaASinistra(i, father->figli, father->nFigli);
@@ -667,8 +686,7 @@ int pCloseWildCard(Node* padre, Node* start, char* nomeC, char* name) {
 	return ris;
 }
 
-int prePClose(Node* padre, char* attributo)
-{
+int prePClose(Node* padre, char* attributo) {
 	if(strstr(attributo, "*") == NULL)
 		return pClose(padre, attributo);
 	else

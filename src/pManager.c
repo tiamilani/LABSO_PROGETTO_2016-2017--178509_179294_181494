@@ -138,7 +138,11 @@ int psystem(char *line)
 			else if(strcmp(comando, "pnew") == 0)
 			{
 				if(strstr(attributo, "_") == NULL)
-					pnew(padre, attributo, 0);
+				{
+					int ris = pnew(padre, attributo, 0);
+					if(ris != 0)
+						gestisciErrori(ris);
+				}
 				else
 					gestisciErrori(4);
 			}
@@ -149,7 +153,16 @@ int psystem(char *line)
 				{
 					tmp = cerca(padre, attributo);
 					if(tmp != NULL)
-						printf("%s\n", pinfo(tmp));
+					{
+						char* ch = calloc(LONGLEN,1);
+						if(ch != NULL)
+						{
+							pinfo(tmp,ch);
+							printf("%s\n", ch);
+						}
+						else
+							gestisciErrori(9);
+					}
 					else
 						gestisciErrori(1);
 				}

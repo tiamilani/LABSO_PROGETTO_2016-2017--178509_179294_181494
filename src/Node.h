@@ -28,7 +28,7 @@ Node* init();
 char* phelp();
 void plist(Node*, char*);
 int pnew(Node*, char*, int);
-char* pinfo(Node*);
+int pinfo(Node*,char *);
 int prePClose(Node*, char*);
 int quit(Node*);
 int pspawn(Node*, char*);
