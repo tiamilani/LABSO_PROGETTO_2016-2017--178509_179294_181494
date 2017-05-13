@@ -1,0 +1,2 @@
+pnew ciao
+pspawn ciao

@@ -27,34 +27,11 @@ char* phelp() {
 }
 
 int readLine (int idPipeLettura,char *str) {
-	/* Read a single '\0'-terminated line into str from fd */
-	/* Return 0 when the end-of-input is reached and 1 otherwise */
-	
-	/*fd_set set;
-	struct timeval timeout;
-	int ris;
-	
-	FD_ZERO(&set); // clear the set 
-	FD_SET(idPipeLettura, &set); // add our file descriptor to the set 
-
-	timeout.tv_sec = 0;
-	timeout.tv_usec = 10000;
-
-	rv = select(idPipeLettura + 1, &set, NULL, NULL, &timeout);
-	if(rv == -1)
-		return errno;
-	else if(rv == 0)
-		return -1; //Codice gestione interna timeout
-	else
-		read(idPipeLettura, str, MAXLEN); // there was data to read 
-	
-	return 0; */
-	
 	int n;
 
 	do {  //Read characters until '\0' or end-of-input 
 		n = read(idPipeLettura, str, 1); //Read one character 
-	} while (n > 0 && *str++ != '\0');
+	} while (n > 0 && *str++ != '\0'); //Controllo che non ci siano errori
 	
 	return returnErrno();
 }
@@ -65,31 +42,39 @@ int readPipe(Node* nodo,char *str) {
 	nodo->idPipeLettura = open(nodo->nomePipeLettura, O_RDONLY); /* Open it for reading */
 	
 	if(errno != 0)
-		return -1;
+		return 10;
 	
 	int ris = readLine(nodo->idPipeLettura,str); /* Display received messages */
-	close(nodo->idPipeLettura);
 	
-	if(ris != -1 && ris != 0)
-		return ris;
-	else if (ris == -1)
-		return ris;
+	/* chiude il file */
+	if(close(nodo->idPipeLettura) == EOF)
+	{
+		perror("Error");
+		return 10;
+	}
 
-	return 0;
+	return ris;
 }
 
 int writePipe(Node* nodo, char* str) {
-	do {
-		printf("CIAO\n");
-		nodo->idPipeScrittura = open(nodo->nomePipeScrittura, O_WRONLY); /* Open it for reading */
-		//if(returnErrno() != 0)
-			//return 1;
-	} while (nodo->idPipeScrittura == -1);
+	nodo->idPipeScrittura = open(nodo->nomePipeScrittura, O_WRONLY); /* Open it for reading */
+	if(returnErrno() != 0)
+	{
+		printf("ERRORE NELL'APERTURA DELLA PIPE\n");
+		return 10;
+	}
 
-	write (nodo->idPipeScrittura, str, strlen(str)); /* Write message down pipe */
-	close(nodo->idPipeScrittura);
+	int n = write (nodo->idPipeScrittura, str, strlen(str)); /* Write message down pipe */
+	if(n < 0)
+		return 10;
 	
-	return returnErrno();
+	if(close(nodo->idPipeScrittura) == EOF)
+	{
+		perror("Error");
+		return 10;
+	}
+	
+	return 0;
 }
 
 int creaPipe(Node* nodo) {
@@ -345,11 +330,22 @@ int pnew(Node *start, char* nome,int signalChildren) { //SignalChildren 0 faccio
 		strcat(message,".");
 
 		if(writePipe(start, message) != 0)
-			return 8;
+		{
+			printf("Problema riscontrato nelle pipe interne\n");
+			return 10;
+		}
 		
 		int k = readPipe(start,test);
-		if(k != 0 && k != -1)
+		if(k != 0)
+		{
+			printf("Problema riscontrato nelle pipe interne, return 10\n");
 			return 10;
+		}
+		if(strstr(test,"IMPOSSIBILE") != NULL)
+		{
+			printf("%s\n", test);
+			return 8;
+		}
 		printf("%s\n", test);
 		/*
 		tentativi = 0;
@@ -374,12 +370,19 @@ int pnew(Node *start, char* nome,int signalChildren) { //SignalChildren 0 faccio
 			return 10;*/
 	}
 
-	test = (char*)calloc(MAXLEN, sizeof(char));
-	if(test == NULL)
-		return 8;
+	test[0] = '\0';
+		
 	int k = readPipe(n,test);
-	if(k != 0 && k != -1)
+	if(k != 0)
+	{
+		printf("Problema riscontrato nelle pipe interne\n");
 		return 10;
+	}
+	if(strstr(test,"ERRORI") != NULL)
+	{
+		printf("%s\n", test);
+		return 8;
+	}
 	printf("%s\n", test);
 	
 	/*tentativi = 0;
@@ -450,13 +453,16 @@ int fatherCloseMe(Node* father, char *childName) {
 		return 9;
 
 	if(writePipe(tmp, "EXIT") != 0)
-		return 9;
+		return 10;
 	
 	//int tentativi = 0;
 	
 	int k = readPipe(tmp,test);
-	if(k != 0 && k != -1)
+	if(k != 0)
+	{
+		printf("Problema riscontrato nelle pipe interne\n");
 		return 10;
+	}
 	printf("%s\n", test);
 	/*
 	do{
@@ -542,6 +548,14 @@ int closeAll(Node* start) {
 	return ris;
 }
 
+void errorcloseAll(Node* start) {
+	while(start->nFigli > 0)
+		closeAll(start->figli[0]);
+
+	closeMe(start);
+	free(start);
+}
+
 //Funzione che clona un certo processo
 //Ipoteticamente la clonazione genera un figlio
 int pspawn(Node* start,char* name) {
@@ -614,6 +628,13 @@ int quit(Node* start) {
 	free(start);
 
 	return ris;
+}
+
+void errorquit(Node* start){
+	while(start->nFigli > 0)
+		errorcloseAll(start->figli[0]);
+
+	free(start);
 }
 
 int wildcard(char *string, char *pattern) {

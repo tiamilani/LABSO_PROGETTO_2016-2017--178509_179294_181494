@@ -34,4 +34,4 @@ assets: build
 	@echo "$(TESTO_TEST)" > $(FILE_DIR_OTHER)$(FILE_TEST)
 
 test: assets
-	@./$(FILE_DIR_SAVE)$(MAIN_EXE) $(FILE_DIR_OTHER)$(FILE_TEST)
+	./$(FILE_DIR_SAVE)$(MAIN_EXE) $(FILE_DIR_OTHER)$(FILE_TEST)

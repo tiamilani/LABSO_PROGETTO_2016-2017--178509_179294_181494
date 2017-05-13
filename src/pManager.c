@@ -62,13 +62,14 @@ void gestisciErrori(int error)
 			printf("Impossibile creare il processo\n");
 			break;
 		case 9:
-			perror("Error: ");
+			perror("Error");
 			errno = 0;
 			printf("Comando non eseguito\n");
 			break;
 		case 10:
-			quit(padre);
+			//errorquit(padre);
 			printf("FATAL ERROR, prova di nuovo, sarai più fortuanto\n");
+			exit(10);
 			break;
 		case 11:
 			printf("Argomento non valido\n");
@@ -76,8 +77,8 @@ void gestisciErrori(int error)
 	}
 }
 
-int psystem(char *line)
-{
+int psystem(char *line) {
+	
 	char *pos;
 	if((pos = strchr(line, '\n')) != NULL)
 		*pos = '\0';
@@ -118,6 +119,11 @@ int psystem(char *line)
 			else if(strcmp(comando, "quit") == 0)
 			{
 				quit(padre);
+				return 1;
+			}
+			else if(strcmp(comando, "errorquit") == 0)
+			{
+				errorquit(padre);
 				return 1;
 			}
 			else
@@ -182,9 +188,17 @@ int psystem(char *line)
 				{
 					option = strtok(NULL, " ");
 					if(option != NULL)
-						prePSpawn(padre, attributo, option);
+					{
+						int ris = prePSpawn(padre, attributo, option);
+						if(ris != 0)
+							gestisciErrori(ris);
+					}	
 					else
-						pspawn(padre, attributo);
+					{
+						int ris = pspawn(padre, attributo);
+						if(ris != 0)
+							gestisciErrori(ris);
+					}
 				}
 				else
 				{
@@ -223,8 +237,12 @@ void menu()
 void file(char* nomeFile)
 {
 	FILE *fd;
-	char *res;
-
+	char *res = (char*)calloc(MAX_LENGTH,sizeof(char));
+	if(res == NULL)
+	{
+		printf("Errore di memoria, non posso aprire il file");
+		return;
+	}
 
 	/* apre il file */
 	fd = fopen(nomeFile, "r");
@@ -234,17 +252,15 @@ void file(char* nomeFile)
 		exit(1);
 	}
 
-
 	/* legge e stampa ogni riga */
 	int i = 0;
 	while(i == 0)
 	{
 		if(fgets(res, 200, fd) == NULL)
 		{
-			perror("Error: ");
+			perror("File");
 			break;
 		}
-
 		i = psystem(res);
 	}
 
