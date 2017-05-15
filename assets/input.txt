@@ -1,2 +1,0 @@
-pnew andreamattiafederico
-pspawn andreamattiafederico 10

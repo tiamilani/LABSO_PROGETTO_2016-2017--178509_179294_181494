@@ -10,6 +10,29 @@
 #include <sys/types.h>
 #include <sys/select.h>
 
+char* color(int num)
+{
+	int color = num%6;
+
+	switch(color)
+	{
+		case 1:
+			return ANSI_COLOR_RED_BG;
+		case 2:
+			return ANSI_COLOR_GREEN_BG;
+		case 3:
+			return ANSI_COLOR_YELLOW_BG;
+		case 4:
+			return ANSI_COLOR_BLUE_BG;
+		case 5:
+			return ANSI_COLOR_MAGENTA_BG;
+		case 6:
+			return ANSI_COLOR_CYAN_BG;
+		default:
+			return ANSI_COLOR_RESET_BG;
+	}
+}
+
 int returnErrno() {
 	if(errno != 0)
 	{
@@ -201,13 +224,14 @@ void ptree(Node* nodo, int tab,char* ch) {
 		}
 	}
 
+	
+	strcat(ch,color(tab));
+
 	if(tab == 1)
 	{
 		strcat(ch, nodo->name);
 		strcat(ch, "\n");
 	}
-	
-	//textcolor(tab%14);
 
 	int i;
 	for(i = 0; i < nodo->nFigli; i++)
@@ -226,7 +250,7 @@ void ptree(Node* nodo, int tab,char* ch) {
 			ptree(nodo->figli[i], tab+1,ch);
 	}
 		
-	//textcolor(15);
+	strcat(ch,color(tab-1));
 }
 
 Node* cerca(Node *start,char* name) {

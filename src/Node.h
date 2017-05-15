@@ -6,6 +6,14 @@
 #define MAXLEN 100
 #define LONGLEN 100000
 
+#define ANSI_COLOR_RED_BG     	"\x1b[41m"
+#define ANSI_COLOR_GREEN_BG		"\x1b[42m"
+#define ANSI_COLOR_YELLOW_BG  	"\x1b[43m"
+#define ANSI_COLOR_BLUE_BG    	"\x1b[44m"
+#define ANSI_COLOR_MAGENTA_BG 	"\x1b[45m"
+#define ANSI_COLOR_CYAN_BG    	"\x1b[46m"
+#define ANSI_COLOR_RESET_BG   	"\x1b[0m"
+
 int contPid = 1;
 int longlen = 100000;
 
