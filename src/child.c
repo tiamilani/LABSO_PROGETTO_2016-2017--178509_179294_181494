@@ -121,7 +121,7 @@ int main (int argc, char* argv[])
 	snprintf(pipeScrittura, PIPELEN, "%s%s", "assets/Scrittura_", argv[1]);
 
 	/* Prepare message */
-	sprintf(message, "Processo <%s> avviato", argv[1]);
+	sprintf(message, "Processo <%s> avviato,%d", argv[1],getpid());
 	if(writePipe(pipeLettura, message) != 0) /* Write message down pipe */
 	{
 		printf("ERRORE FATALE NELL'APERTURA DELLA PIPE DA PARTE DEL PROCESSO,\nCHIUSURA DEL PROCESSO IN CORSO\nUTILIZZARE IL COMDANDO errorquit PER CHIUDERE LA SHELL\n");

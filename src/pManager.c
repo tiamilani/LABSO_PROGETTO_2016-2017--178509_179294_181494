@@ -10,12 +10,13 @@
 Node *padre;
 #define MAX_LENGTH 1024
 
-//calloc NULL se non è andata a buon fine
-//signal SIG_ERR 
-//read -1 in caso di errore
-//write -1
-//fclose EOF
-//printf numero negativo
+#define ANSI_COLOR_RED     "\x1b[31m"
+#define ANSI_COLOR_GREEN   "\x1b[32m"
+#define ANSI_COLOR_YELLOW  "\x1b[33m"
+#define ANSI_COLOR_BLUE    "\x1b[34m"
+#define ANSI_COLOR_MAGENTA "\x1b[35m"
+#define ANSI_COLOR_CYAN    "\x1b[36m"
+#define ANSI_COLOR_RESET   "\x1b[0m"
 
 void gestisciErrori(int error)
 {
@@ -38,41 +39,44 @@ void gestisciErrori(int error)
 		case 0:
 			break;
 		case 1:
-			printf("Nodo non trovato!\n");
+			printf(ANSI_COLOR_GREEN "Nodo non trovato!\n" ANSI_COLOR_RESET);
 			break;
 		case 2:
-			printf("Inserisci un nome piu' breve!\n");
+			printf(ANSI_COLOR_GREEN "Inserisci un nome piu' breve!\n" ANSI_COLOR_RESET);
 			break;
 		case 3:
-			printf("Nome non consentito!\n");
+			printf(ANSI_COLOR_RED "Nome non consentito!\n" ANSI_COLOR_RESET);
 			break;
 		case 4:
-			printf("Nome non valido, rimuovi il carattere _\n");
+			printf(ANSI_COLOR_RED "Nome non valido, rimuovi il carattere _\n" ANSI_COLOR_RESET);
 			break;
 		case 5:
-			printf("Comando non trovato, usa phelp per la lista dei comandi!\n");
+			printf(ANSI_COLOR_GREEN "Comando non trovato, usa " ANSI_COLOR_RESET "phelp " ANSI_COLOR_GREEN "per la lista dei comandi!\n" ANSI_COLOR_RESET);
 			break;
 		case 6:
-			printf("Il processo non puo' terminare poiche' ha figli!\n");
+			printf(ANSI_COLOR_RED "Il processo non puo' terminare poiche' ha figli!\n" ANSI_COLOR_RESET);
 			break;
 		case 7:
-			printf("Esiste già un figlio con questo nome\n");
+			printf(ANSI_COLOR_RED "Esiste già un figlio con questo nome\n" ANSI_COLOR_RESET);
 			break;
 		case 8:
-			printf("Impossibile creare il processo\n");
+			printf(ANSI_COLOR_RED "Impossibile creare il processo\n" ANSI_COLOR_RESET);
 			break;
 		case 9:
 			perror("Error");
 			errno = 0;
-			printf("Comando non eseguito\n");
+			printf(ANSI_COLOR_RED "Comando non eseguito\n" ANSI_COLOR_RESET);
 			break;
 		case 10:
-			//errorquit(padre);
-			printf("FATAL ERROR, prova di nuovo, sarai più fortuanto\n");
+			sleep(2);
+			printf(ANSI_COLOR_RED "Procedo alla terminazione di tutti i processi:\n");
+			sleep(2);
+			errorquit(padre);
+			printf(ANSI_COLOR_MAGENTA "FATAL ERROR, prova di nuovo, sarai più fortuanto\n" ANSI_COLOR_RESET);
 			exit(10);
 			break;
 		case 11:
-			printf("Argomento non valido\n");
+			printf(ANSI_COLOR_GREEN "Argomento non valido\n" ANSI_COLOR_RESET);
 			break;
 	}
 }

@@ -13,6 +13,7 @@ typedef struct Node Node;
 
 struct Node{
 	int pid;
+	int systemPid;
 	char *name;
 	int nFigli;
 	Node* father;

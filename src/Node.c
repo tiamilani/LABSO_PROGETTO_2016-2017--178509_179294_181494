@@ -206,6 +206,8 @@ void ptree(Node* nodo, int tab,char* ch) {
 		strcat(ch, nodo->name);
 		strcat(ch, "\n");
 	}
+	
+	//textcolor(tab%14);
 
 	int i;
 	for(i = 0; i < nodo->nFigli; i++)
@@ -223,6 +225,8 @@ void ptree(Node* nodo, int tab,char* ch) {
 		if(nodo->figli[i]->nFigli > 0)
 			ptree(nodo->figli[i], tab+1,ch);
 	}
+		
+	//textcolor(15);
 }
 
 Node* cerca(Node *start,char* name) {
@@ -257,6 +261,19 @@ void spostaASinistra(int i, Node** v, int n) {
 		v[i] = v[k];
 		i++;
 	}
+}
+
+int ottieniPid(char* test)
+{
+	char* testo = (char*)calloc(MAXLEN, sizeof(char));
+	char* pid = (char*)calloc(MINLEN, sizeof(char));
+	
+	testo = strtok(test, ",");
+	pid = strtok(NULL, ",");
+	
+	strcpy(test,testo);
+	
+	return (int)strtol(pid, (char **)NULL, 10);
 }
 
 //Return -1 se il nodo esisteva già tra i figli successivi di start
@@ -299,6 +316,9 @@ int pnew(Node *start, char* nome,int signalChildren) { //SignalChildren 0 faccio
 	char* test = (char*)calloc(MAXLEN, sizeof(char));
 	if(test == NULL)
 		return 8;
+	char* test2 = (char*)calloc(MAXLEN, sizeof(char));
+	if(test == NULL)
+		return 8;
 	
 	snprintf(strpid, MINLEN, "%d", contPid);
 
@@ -338,7 +358,7 @@ int pnew(Node *start, char* nome,int signalChildren) { //SignalChildren 0 faccio
 		int k = readPipe(start,test);
 		if(k != 0)
 		{
-			printf("Problema riscontrato nelle pipe interne, return 10\n");
+			//printf("Problema riscontrato nelle pipe interne\n");
 			return 10;
 		}
 		if(strstr(test,"IMPOSSIBILE") != NULL)
@@ -369,10 +389,9 @@ int pnew(Node *start, char* nome,int signalChildren) { //SignalChildren 0 faccio
 		if(tentativi == 3)
 			return 10;*/
 	}
-
-	test[0] = '\0';
 		
-	int k = readPipe(n,test);
+	int k = readPipe(n,test2);
+	
 	if(k != 0)
 	{
 		printf("Problema riscontrato nelle pipe interne\n");
@@ -380,10 +399,13 @@ int pnew(Node *start, char* nome,int signalChildren) { //SignalChildren 0 faccio
 	}
 	if(strstr(test,"ERRORI") != NULL)
 	{
-		printf("%s\n", test);
+		printf("%s\n", test2);
 		return 8;
 	}
-	printf("%s\n", test);
+	
+	n->systemPid = ottieniPid(test2);
+	
+	printf("%s\n", test2);
 	
 	/*tentativi = 0;
 	
@@ -548,11 +570,21 @@ int closeAll(Node* start) {
 	return ris;
 }
 
-void errorcloseAll(Node* start) {
-	while(start->nFigli > 0)
-		closeAll(start->figli[0]);
+void killProc(int pid)
+{
+	 kill(pid, SIGTERM);
+}
 
-	closeMe(start);
+void errorcloseAll(Node* start) {
+	int i = start->nFigli - 1;
+	while(i >= 0)
+	{
+		errorcloseAll(start->figli[i]);
+		i--;
+	}
+	
+	killProc(start->systemPid);
+	printf("Processo <%d> terminato\n",start->pid);
 	free(start);
 }
 
@@ -631,8 +663,12 @@ int quit(Node* start) {
 }
 
 void errorquit(Node* start){
-	while(start->nFigli > 0)
-		errorcloseAll(start->figli[0]);
+	int i = start->nFigli - 1;
+	while(i >= 0)
+	{
+		errorcloseAll(start->figli[i]);
+		i--;
+	}
 
 	free(start);
 }
@@ -738,6 +774,7 @@ Node* init() {
 	Node *padre = (Node*)calloc(1,sizeof(Node));
 	if(padre!=NULL){
 		padre->pid = contPid;
+		padre->systemPid = getpid();
 		padre->father = NULL;
 		padre->name = "pManager";
 		padre->nFigli = 0;
