@@ -18,6 +18,8 @@ Node *padre;
 #define ANSI_COLOR_CYAN    "\x1b[36m"
 #define ANSI_COLOR_RESET   "\x1b[0m"
 
+void file(char*);
+
 void gestisciErrori(int error)
 {
 	/*
@@ -212,6 +214,33 @@ int psystem(char *line) {
 			else if(strcmp(comando, "prmall") == 0)
 			{
 				prmall(padre, attributo);
+			}
+			else if(strcmp(comando, "ptree") == 0)
+			{
+				Node* tmp = (Node*)calloc(1, sizeof(Node));
+				if(tmp != NULL)
+				{
+					tmp = cerca(padre, attributo);
+					if(tmp != NULL)
+					{
+						char* ch = calloc(LONGLEN,1);
+						if(ch != NULL)
+						{
+							ptree(tmp,1,ch);
+							printf("%s\n", ch);
+						}
+						else
+							gestisciErrori(9);
+					}
+					else
+						gestisciErrori(1);
+				}
+				else
+					gestisciErrori(9);
+			}
+			else if(strcmp(comando, "pfile") == 0)
+			{
+				file(attributo);
 			}
 			else
 				gestisciErrori(5);
