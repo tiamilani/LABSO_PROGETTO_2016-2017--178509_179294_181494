@@ -16,7 +16,7 @@ MAIN_FILE=pManager.c
 CHILD_EXE=child
 CHILD_FILE=child.c
 FILE_TEST=input.txt
-TESTO_TEST=pnew andreamattiafederico\npspawn andreamattiafederico 10\npspawn andreamattiafederico_5 10\npspawn andreamattiafederico_4_5 10\npspawn andreamattiafederico_3_5 10\npspawn andreamattiafederico_2_5 10\npspawn andreamattiafederico_1_5 10\npspawn andreamattiafederico_5_5 10\npspawn andreamattiafederico_4_5 10\npspawn andreamattiafederico_3_5 10\npspawn andreamattiafederico_2_5 10\npspawn andreamattiafederico_1_5 10\npspawn andreamattiafederico_2_5_5 10\npspawn andreamattiafederico_1_5_5 10\npspawn andreamattiafederico_2_5_5_5 10\npspawn andreamattiafederico_1_5_5_5 10
+TESTO_TEST=pnew andreamattiafederico\npspawn andreamattiafederico 10
 
 help:
 	@echo -e "$(TESTO)"

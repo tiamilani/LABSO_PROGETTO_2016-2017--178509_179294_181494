@@ -84,7 +84,7 @@ void gestisciErrori(int error)
 }
 
 int psystem(char *line) {
-	
+
 	char *pos;
 	if((pos = strchr(line, '\n')) != NULL)
 		*pos = '\0';
@@ -198,7 +198,7 @@ int psystem(char *line) {
 						int ris = prePSpawn(padre, attributo, option);
 						if(ris != 0)
 							gestisciErrori(ris);
-					}	
+					}
 					else
 					{
 						int ris = pspawn(padre, attributo);
@@ -291,7 +291,8 @@ void file(char* nomeFile)
 	{
 		if(fgets(res, 200, fd) == NULL)
 		{
-			perror("File");
+			if(errno != 0)
+				perror("File");
 			break;
 		}
 		i = psystem(res);
@@ -306,19 +307,19 @@ void file(char* nomeFile)
 int main(int argc, char* argv[])
 {
 	padre = init();
-	
+
 	if(padre == NULL)
 	{
 		gestisciErrori(10);
 		exit(2);
 	}
-	
+
 	if(signal(SIGINT,SIG_IGN) == SIG_ERR)
 	{
 		gestisciErrori(10);
 		exit(3);
 	}
-		
+
 	if(argc == 1)
 		menu();
 	else

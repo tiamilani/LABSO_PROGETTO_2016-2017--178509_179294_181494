@@ -40,7 +40,7 @@ int returnErrno() {
 		//errno = 0;
 		return -1;
 	}
-	
+
 	return 0;
 }
 
@@ -52,10 +52,10 @@ char* phelp() {
 int readLine (int idPipeLettura,char *str) {
 	int n;
 
-	do {  //Read characters until '\0' or end-of-input 
-		n = read(idPipeLettura, str, 1); //Read one character 
+	do {  //Read characters until '\0' or end-of-input
+		n = read(idPipeLettura, str, 1); //Read one character
 	} while (n > 0 && *str++ != '\0'); //Controllo che non ci siano errori
-	
+
 	return returnErrno();
 }
 
@@ -63,12 +63,12 @@ int readPipe(Node* nodo,char *str) {
 	//char* str = (char*)calloc(MAXLEN,sizeof(char));
 
 	nodo->idPipeLettura = open(nodo->nomePipeLettura, O_RDONLY); /* Open it for reading */
-	
+
 	if(errno != 0)
 		return 10;
-	
+
 	int ris = readLine(nodo->idPipeLettura,str); /* Display received messages */
-	
+
 	/* chiude il file */
 	if(close(nodo->idPipeLettura) == EOF)
 	{
@@ -90,28 +90,28 @@ int writePipe(Node* nodo, char* str) {
 	int n = write (nodo->idPipeScrittura, str, strlen(str)); /* Write message down pipe */
 	if(n < 0)
 		return 10;
-	
+
 	if(close(nodo->idPipeScrittura) == EOF)
 	{
 		perror("Error");
 		return 10;
 	}
-	
+
 	return 0;
 }
 
 int creaPipe(Node* nodo) {
 	unlink(nodo->nomePipeLettura);
 	unlink(nodo->nomePipeScrittura);
-	
+
 	errno = 0;
-	
+
 	mknod(nodo->nomePipeLettura, S_IFIFO, 0); /* Create named pipe */
 	chmod(nodo->nomePipeLettura, 0666); /* Change its permissions */
 
 	mknod (nodo->nomePipeScrittura, S_IFIFO, 0); /* Create named pipe */
 	chmod (nodo->nomePipeScrittura, 0666); /* Change its permissions */
-	
+
 	return returnErrno();
 }
 
@@ -153,42 +153,42 @@ char* getFatherName(Node* n) {
 }
 
 int pinfo(Node* n, char* str) {
-	
+
 	int spacing = 0;
 	int i;
-	
+
 	spacing = strlen(n->name);
 	strcat(str,"Nome");
 	for(i=0;i<spacing;i++)
 		strcat(str," ");
-	
+
 	strcat(str,"Pid");
 	spacing = strlen(getPid(n));
 	for(i=0;i<spacing;i++)
 		strcat(str," ");
-		
+
 	strcat(str,"Padre");
-	
+
 	spacing = strlen(getFatherName(n));
 	for(i=0;i<spacing;i++)
 		strcat(str," ");
-		
+
 	strcat(str,"PPid\n");
-	
+
 	strcat(str, getName(n));
 	for(i=0;i<strlen("Nome");i++)
 		strcat(str," ");
-	
+
 	strcat(str,getPid(n));
-	
+
 	for(i=0;i<strlen("Pid");i++)
 		strcat(str," ");
-	
+
 	strcat(str, getFatherName(n));
-	
+
 	for(i=0;i<strlen("Padre");i++)
 		strcat(str," ");
-	
+
 	strcat(str, getFatherPid(n));
 	return 0;
 }
@@ -224,7 +224,7 @@ void ptree(Node* nodo, int tab,char* ch) {
 		}
 	}
 
-	
+
 	strcat(ch,color(tab));
 
 	if(tab == 1)
@@ -249,7 +249,7 @@ void ptree(Node* nodo, int tab,char* ch) {
 		if(nodo->figli[i]->nFigli > 0)
 			ptree(nodo->figli[i], tab+1,ch);
 	}
-		
+
 	strcat(ch,color(tab-1));
 }
 
@@ -291,12 +291,13 @@ int ottieniPid(char* test)
 {
 	char* testo = (char*)calloc(MAXLEN, sizeof(char));
 	char* pid = (char*)calloc(MINLEN, sizeof(char));
-	
+	printf("strtok\n");
 	testo = strtok(test, ",");
 	pid = strtok(NULL, ",");
-	
-	strcpy(test,testo);
-	
+	printf("%s ____\n", test);
+	//strcpy(test, testo);
+
+	printf("dhfskduhujh\n");
 	return (int)strtol(pid, (char **)NULL, 10);
 }
 
@@ -310,20 +311,20 @@ int pnew(Node *start, char* nome,int signalChildren) { //SignalChildren 0 faccio
 	Node *n = (Node*)calloc(1, sizeof(Node));
 	if(n == NULL)
 		return 8;
-		
+
 	n->pid = contPid;
 	n->father = start;
 	n->name = (char*)calloc(100,sizeof(char));
 	if(n->name == NULL)
 		return 8;
-		
+
 	strcat(n->name,nome);
 	n->nFigli = 0;
 	n->numCloni = 0;
 
 	n->nomePipeScrittura = (char*)calloc(PIPELEN, sizeof(char));
 	n->nomePipeLettura = (char*)calloc(PIPELEN, sizeof(char));
-	
+
 	if((n->nomePipeScrittura == NULL) || (n->nomePipeLettura == NULL))
 		return 8;
 
@@ -336,14 +337,14 @@ int pnew(Node *start, char* nome,int signalChildren) { //SignalChildren 0 faccio
 	char* strpid = (char*)calloc(MINLEN, sizeof(char));
 	if(strpid == NULL)
 		return 8;
-		
+
 	char* test = (char*)calloc(MAXLEN, sizeof(char));
 	if(test == NULL)
 		return 8;
 	char* test2 = (char*)calloc(MAXLEN, sizeof(char));
 	if(test == NULL)
 		return 8;
-	
+
 	snprintf(strpid, MINLEN, "%d", contPid);
 
 	if(creaPipe(n) != 0)
@@ -354,7 +355,6 @@ int pnew(Node *start, char* nome,int signalChildren) { //SignalChildren 0 faccio
 
 	if(signalChildren == 0)
 	{
-		
 		int p = fork();
 		if(p == 0)
 			execl("build/child", n->name, strpid, (char*) NULL);
@@ -366,7 +366,7 @@ int pnew(Node *start, char* nome,int signalChildren) { //SignalChildren 0 faccio
 		char* message = (char*)calloc(MAXLEN,sizeof(char));
 		if(message == NULL)
 			return 8;
-			
+
 		strcat(message,"CLON ");
 		strcat(message,n->name);
 		strcat(message," ");
@@ -378,7 +378,7 @@ int pnew(Node *start, char* nome,int signalChildren) { //SignalChildren 0 faccio
 			printf("Problema riscontrato nelle pipe interne\n");
 			return 10;
 		}
-		
+
 		int k = readPipe(start,test);
 		if(k != 0)
 		{
@@ -393,12 +393,12 @@ int pnew(Node *start, char* nome,int signalChildren) { //SignalChildren 0 faccio
 		printf("%s\n", test);
 		/*
 		tentativi = 0;
-	
+
 		do{
 			int k = readPipe(n,test)
 			if(k != 0 && k != -1)
 				return 10;
-			
+
 			if(strstr(test, "terminato") != NULL)
 			{
 				printf("%s\n", test);
@@ -406,38 +406,43 @@ int pnew(Node *start, char* nome,int signalChildren) { //SignalChildren 0 faccio
 			}
 			else
 				printf("Non ho ricevuto risposta dal processo...riprovo");
-			
+
 			tentativi++;
 		}while(tentativi < 3)
 
 		if(tentativi == 3)
 			return 10;*/
 	}
-		
-	int k = readPipe(n,test2);
-	
+
+	int k = readPipe(n, test2);
+	printf("___ %s\n", test2);
+
 	if(k != 0)
 	{
+		printf("1\n");
 		printf("Problema riscontrato nelle pipe interne\n");
 		return 10;
 	}
 	if(strstr(test,"ERRORI") != NULL)
 	{
+		printf("2\n");
 		printf("%s\n", test2);
 		return 8;
 	}
-	
+
+	printf("pre\n");
 	n->systemPid = ottieniPid(test2);
-	
+	printf("post\n");
+
 	printf("%s\n", test2);
-	
+
 	/*tentativi = 0;
-	
+
 	do{
 		int k = readPipe(n,test)
 		if(k != 0 && k != -1)
 			return 10;
-		
+
 		if(strstr(test, "terminato") != NULL)
 		{
 			printf("%s\n", test);
@@ -445,7 +450,7 @@ int pnew(Node *start, char* nome,int signalChildren) { //SignalChildren 0 faccio
 		}
 		else
 			printf("Non ho ricevuto risposta dal processo...riprovo");
-		
+
 		tentativi++;
 	}while(tentativi < 3)
 
@@ -460,12 +465,13 @@ int pnew(Node *start, char* nome,int signalChildren) { //SignalChildren 0 faccio
 	start->figli = (Node**)calloc(start->nFigli, sizeof(Node));
 	if(start->figli == NULL)
 		return 10;
-		
+
 	//Ricopio il vettore originale
 	copiaVettore(start->figli, vettoreFigli, start->nFigli - 1);
 
 	//Assegno il nuovo figlio
 	start->figli[start->nFigli - 1] = n;
+	printf("Ciao\n");
 
 	//Ritorno 0 se è tutto a posto
 	return 0;
@@ -478,16 +484,16 @@ int fatherCloseMe(Node* father, char *childName) {
 	Node *tmp = (Node*)calloc(1, sizeof(Node));
 	if(tmp == NULL)
 		return 9;
-	
+
 	char* test = (char*)calloc(MAXLEN,sizeof(char));
 	if(test == NULL)
 		return 9;
-	
-	
+
+
 	Node** vettoreFigli = (Node**)calloc((father->nFigli-1), sizeof(Node));
 	if(vettoreFigli == NULL)
 		return 9;
-	
+
 	for(i = 0; i < father->nFigli; i++)
 	{
 		tmp = father->figli[i];
@@ -500,9 +506,9 @@ int fatherCloseMe(Node* father, char *childName) {
 
 	if(writePipe(tmp, "EXIT") != 0)
 		return 10;
-	
+
 	//int tentativi = 0;
-	
+
 	int k = readPipe(tmp,test);
 	if(k != 0)
 	{
@@ -515,7 +521,7 @@ int fatherCloseMe(Node* father, char *childName) {
 		int k = readPipe(tmp,test)
 		if(k != 0 && k != -1)
 			return 10;
-		
+
 		if(strstr(test, "terminato") != NULL)
 		{
 			printf("%s\n", test);
@@ -523,7 +529,7 @@ int fatherCloseMe(Node* father, char *childName) {
 		}
 		else
 			printf("Non ho ricevuto risposta dal processo...riprovo");
-		
+
 		tentativi++;
 	}while(tentativi < 3)
 
@@ -542,7 +548,7 @@ int fatherCloseMe(Node* father, char *childName) {
 	father->figli = (Node**)calloc(father->nFigli, sizeof(Node));
 	if(father->figli == NULL)
 		return 10;
-	
+
 	//Ricopio il vettore originale
 	copiaVettore(father->figli, vettoreFigli, father->nFigli);
 
@@ -583,7 +589,7 @@ int closeAll(Node* start) {
 	int ris = 0;
 	while(start->nFigli > 0)
 		ris = closeAll(start->figli[0]);
-	
+
 	if(ris != 0)
 		return ris;
 
@@ -606,7 +612,7 @@ void errorcloseAll(Node* start) {
 		errorcloseAll(start->figli[i]);
 		i--;
 	}
-	
+
 	killProc(start->systemPid);
 	printf("Processo <%d> terminato\n",start->pid);
 	free(start);
@@ -620,9 +626,9 @@ int pspawn(Node* start,char* name) {
 	Node *tmp = (Node*)calloc(1, sizeof(Node));
 	if(tmp == NULL)
 		return 9;
-	
+
 	tmp = cerca(start, name);
-	
+
 	if(tmp == NULL)
 		return 1; //Errore, nodo non trovato
 	else
@@ -632,7 +638,7 @@ int pspawn(Node* start,char* name) {
 		char* childrenName = (char*)calloc(strlen(name) + 5, sizeof(char));
 		if(childrenName == NULL)
 			return 9;
-			
+
 		childrenName = strcat(childrenName, name);
 
 		if(tmp->nFigli > 0)
@@ -647,7 +653,7 @@ int pspawn(Node* start,char* name) {
 int prePSpawn(Node* start, char* name, char* option){
 	int num, i;
 	num = atoi(option); //fa schifo
-	
+
 	if(num < 0)
 		return 11;
 
@@ -665,10 +671,10 @@ int prePSpawn(Node* start, char* name, char* option){
 //Funzione per chiudere tutto partendo da un nome
 int prmall(Node* start, char* name) {
 	Node *tmp = (Node*)calloc(1, sizeof(Node));
-	
+
 	if(tmp == NULL)
 		return 9;
-	
+
 	tmp = cerca(start, name);
 	if(tmp == NULL)
 		return 1; //Errore, nodo non trovato
@@ -773,10 +779,10 @@ int prePClose(Node* padre, char* attributo) {
 	else
 	{
 		char* nome = (char*)calloc(sizeof(attributo),sizeof(char));
-		
+
 		if(nome == NULL)
 			return 9;
-		
+
 		int i = 0, j = 0;
 		while(i < strlen(attributo))
 		{
@@ -805,7 +811,7 @@ Node* init() {
 		padre->numCloni = 0;
 		return padre;
 	}
-	
+
 	perror("Error: ");
 	return NULL;
 }
