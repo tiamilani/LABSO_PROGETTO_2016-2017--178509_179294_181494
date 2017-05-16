@@ -9,6 +9,23 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/select.h>
+/*
+System rm della pipe in caso di error quit
+Ricreare la pipe tentare
+Non fatal error ma error 12 processi killati ma solo quelli con pipe rotta, esecuzione non interrotta
+Problema di concorrenza pmanager
+
+Phelp più completo
+Ptree dal processo
+File open dal pmanager
+Pinfo verbose
+Pnew più processi
+Pspawn percentuale per i multipli e magari meno printf dei cloni multipli
+Plist nodo diverso dal padre
+Plist simil ls (per le colonne)
+Prmall con wildcard
+Esporta gerarchia attuale
+*/
 
 char* color(int num)
 {
@@ -186,14 +203,14 @@ int pinfo(Node* n, char* str) {
 
 	strcat(str, getFatherName(n));
 
-	for(i=0;i<strlen("Padre");i++)
+	for(i = 0; i < strlen("Padre"); i++)
 		strcat(str," ");
 
 	strcat(str, getFatherPid(n));
 	return 0;
 }
 
-void plist(Node* nodo,char* ch) {
+void plist(Node* nodo, char* ch) {
 
 	if(ch != NULL && strlen(ch) > 0)
 	{
@@ -207,8 +224,9 @@ void plist(Node* nodo,char* ch) {
 
 	strcat(ch, getName(nodo));
 	strcat(ch, "\n");
+	int i;
 
-	for(int i = 0; i < nodo->nFigli; i++)
+	for(i = 0; i < nodo->nFigli; i++)
 		plist(nodo->figli[i],ch);
 }
 
@@ -225,7 +243,7 @@ void ptree(Node* nodo, int tab,char* ch) {
 	}
 
 
-	strcat(ch,color(tab));
+	//strcat(ch,color(tab));
 
 	if(tab == 1)
 	{
@@ -236,8 +254,8 @@ void ptree(Node* nodo, int tab,char* ch) {
 	int i;
 	for(i = 0; i < nodo->nFigli; i++)
 	{
-
-		for(int j = 1; j < tab; j++)
+		int j;
+		for(j = 1; j < tab; j++)
 			strcat(ch, "|   ");
 		strcat(ch, "|");
 		strcat(ch, "-");
@@ -250,7 +268,7 @@ void ptree(Node* nodo, int tab,char* ch) {
 			ptree(nodo->figli[i], tab+1,ch);
 	}
 
-	strcat(ch,color(tab-1));
+	//strcat(ch,color(tab-1));
 }
 
 Node* cerca(Node *start,char* name) {
@@ -291,13 +309,11 @@ int ottieniPid(char* test)
 {
 	char* testo = (char*)calloc(MAXLEN, sizeof(char));
 	char* pid = (char*)calloc(MINLEN, sizeof(char));
-	printf("strtok\n");
+
 	testo = strtok(test, ",");
 	pid = strtok(NULL, ",");
-	printf("%s ____\n", test);
 	//strcpy(test, testo);
 
-	printf("dhfskduhujh\n");
 	return (int)strtol(pid, (char **)NULL, 10);
 }
 
@@ -415,24 +431,19 @@ int pnew(Node *start, char* nome,int signalChildren) { //SignalChildren 0 faccio
 	}
 
 	int k = readPipe(n, test2);
-	printf("___ %s\n", test2);
 
 	if(k != 0)
 	{
-		printf("1\n");
 		printf("Problema riscontrato nelle pipe interne\n");
 		return 10;
 	}
 	if(strstr(test,"ERRORI") != NULL)
 	{
-		printf("2\n");
 		printf("%s\n", test2);
 		return 8;
 	}
 
-	printf("pre\n");
 	n->systemPid = ottieniPid(test2);
-	printf("post\n");
 
 	printf("%s\n", test2);
 
@@ -471,7 +482,6 @@ int pnew(Node *start, char* nome,int signalChildren) { //SignalChildren 0 faccio
 
 	//Assegno il nuovo figlio
 	start->figli[start->nFigli - 1] = n;
-	printf("Ciao\n");
 
 	//Ritorno 0 se è tutto a posto
 	return 0;

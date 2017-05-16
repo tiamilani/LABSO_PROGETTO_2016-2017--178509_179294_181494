@@ -226,7 +226,30 @@ int psystem(char *line) {
 						char* ch = calloc(LONGLEN,1);
 						if(ch != NULL)
 						{
-							ptree(tmp,1,ch);
+							ptree(tmp, 1, ch);
+							printf("%s\n", ch);
+						}
+						else
+							gestisciErrori(9);
+					}
+					else
+						gestisciErrori(1);
+				}
+				else
+					gestisciErrori(9);
+			}
+			else if(strcmp(comando, "plist") == 0)
+			{
+				Node* tmp = (Node*)calloc(1, sizeof(Node));
+				if(tmp != NULL)
+				{
+					tmp = cerca(padre, attributo);
+					if(tmp != NULL)
+					{
+						char* ch = calloc(LONGLEN,1);
+						if(ch != NULL)
+						{
+							plist(tmp, ch);
 							printf("%s\n", ch);
 						}
 						else
