@@ -16,7 +16,7 @@ MAIN_FILE=pManager.c
 CHILD_EXE=child
 CHILD_FILE=child.c
 FILE_TEST=input.txt
-TESTO_TEST=pnew andreamattiafederico\npspawn andreamattiafederico 10
+TESTO_TEST=pnew ciao\npspawn ciao 10
 TMP_FILE=src/tmp
 
 help:
@@ -35,7 +35,10 @@ assets: build
 	@echo "$(TESTO_TEST)" > $(FILE_DIR_OTHER)$(FILE_TEST)
 
 exist:
+	echo "ciao1"
 	@test -f "$(TMP_FILE)" || $(MAKE) assets
+	echo "ciao2"
 
 test: exist
+	echo "ciao3"
 	@./$(FILE_DIR_SAVE)$(MAIN_EXE) $(FILE_DIR_OTHER)$(FILE_TEST)

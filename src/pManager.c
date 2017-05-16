@@ -131,8 +131,18 @@ int psystem(char *line) {
 			}
 			else if(strcmp(comando, "errorquit") == 0)
 			{
-				errorquit(padre);
-				return 1;
+				int ris = errorquit(padre);
+				if(ris != 0)
+					gestisciErrori(ris);
+				//return 1;
+			}
+			else if(strcmp(comando, "pexport") == 0)
+			{
+				int ris = pexport(padre);
+				if(ris != 0)
+					gestisciErrori(ris);
+				else
+					printf("Export del file avvenuto correttamente, trovi il file in assets/log.txt\n");
 			}
 			else
 				gestisciErrori(5);

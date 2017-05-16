@@ -1,2 +1,2 @@
-pnew andreamattiafederico
-pspawn andreamattiafederico 10
+pnew ciao
+pspawn ciao 10

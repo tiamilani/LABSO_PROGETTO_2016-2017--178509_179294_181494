@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/select.h>
+
 /*
 OK -> System rm della pipe in caso di error quit
 Ricreare la pipe tentare
@@ -478,7 +479,7 @@ int pnew(Node *start, char* nome,int signalChildren) { //SignalChildren 0 faccio
 }
 
 //Funzione che permette di chiudere un figlio attraverso il padre
-int fatherCloseMe(Node* father, char *childName) {
+int fatherCloseMe(Node* father, char *childName,int flag) {
 	//Trovo il processo tra i miei figli per avere l'indice i esimo
 	int i = 0;
 	Node *tmp = (Node*)calloc(1, sizeof(Node));
@@ -501,43 +502,24 @@ int fatherCloseMe(Node* father, char *childName) {
 			break;
 	}
 
-	if(signal(SIGCHLD, SIG_IGN) == SIG_ERR)
-		return 9;
-
-	if(writePipe(tmp, "EXIT") != 0)
-		return 10;
-
-	//int tentativi = 0;
-
-	int k = readPipe(tmp,test);
-	if(k != 0)
+	if(flag == 0)
 	{
-		printf("Problema riscontrato nelle pipe interne\n");
-		return 10;
-	}
-	printf("%s\n", test);
-	/*
-	do{
-		int k = readPipe(tmp,test)
-		if(k != 0 && k != -1)
+		if(signal(SIGCHLD, SIG_IGN) == SIG_ERR)
+			return 9;
+
+		if(writePipe(tmp, "EXIT") != 0)
 			return 10;
 
-		if(strstr(test, "terminato") != NULL)
+		//int tentativi = 0;
+
+		int k = readPipe(tmp,test);
+		if(k != 0)
 		{
-			printf("%s\n", test);
-			break;
+			printf("Problema riscontrato nelle pipe interne\n");
+			return 10;
 		}
-		else
-			printf("Non ho ricevuto risposta dal processo...riprovo");
-
-		tentativi++;
-	}while(tentativi < 3)
-
-	if(tentativi == 3)
-		return 10;
-
-	chiudiPipe(tmp);*/
-
+		printf("%s\n", test);
+	}
 	//Sposto di una posizione tutti i figli che stanno alla destra del figlio che ho eliminato
 	spostaASinistra(i, father->figli, father->nFigli);
 	//Riduco di una dimensione la memoria allocata al vettore dei figli
@@ -563,7 +545,7 @@ int closeMe(Node* nodo) {
 		return 6;
 
 	//chiedo a mio padre di inviarmi il segnale di chiusura al processo
-	return fatherCloseMe(nodo->father, nodo->name);
+	return fatherCloseMe(nodo->father, nodo->name,0);
 }
 
 //Funzione per chiudere un processo con <name>
@@ -606,51 +588,66 @@ void killProc(int pid)
 }
 
 int testPipe(Node* n){
-	n->idPipeLettura = open(n->nomePipeLettura, O_RDONLY); /* Open it for reading */
+	
+	int tmp1 = open(n->nomePipeLettura, O_RDONLY | O_NONBLOCK); // Open it for reading 
 
-	if(errno != 0)
+	if(tmp1 == -1)
+	{
+		perror("ERROR");
 		return 10;
+	}
 
-	/* chiude il file */
-	if(close(n->idPipeLettura) == EOF)
+	if(close(tmp1) == EOF)
 	{
 		perror("Error");
 		return 10;
 	}
 	
-	n->idPipeScrittura = open(n->nomePipeScrittura, O_WRONLY); /* Open it for reading */
+	tmp1 = open(n->nomePipeScrittura, O_WRONLY | O_NONBLOCK); /* Open it for reading */
 
-	if(errno != 0)
+	if(tmp1 == -1)
 		return 10;
 
 	/* chiude il file */
-	if(close(n->idPipeScrittura) == EOF)
+	if(close(tmp1) == EOF)
 	{
 		perror("Error");
 		return 10;
 	}
-	
+
 	return 0;
 }
 
-void errorcloseAll(Node* start) {
-	if(testPipe(start) != 0)
+int errorquit(Node* nodo){
+	if(strcmp(getName(nodo),"pmanager") != 0)
 	{
-		killProc(start->systemPid);
-		closeAll(start);
-		printf("Processo <%d> terminato\nchiudura dei figli in corso\n",start->pid);
-		free(start);
-	}
-	else
-	{
-		printf("processo <%d> non corrotto, controllo i suoi figli\n",start->pid);
-		int i = start->nFigli - 1;
-		while(i >= 0)
+		if(testPipe(nodo) != 0)
 		{
-			errorcloseAll(start->figli[i]);
-			i--;
+			killProc(nodo->systemPid);
+			chiudiPipe(nodo);
+	
+			int i = nodo->nFigli - 1;
+			while(i>=0)
+			{
+				closeAll(nodo->figli[i]);
+				i--;
+			}
+
+			if(fatherCloseMe(getFather(nodo),getName(nodo),1) == 10)
+				return 10;
 		}
 	}
+
+	int i = nodo->nFigli - 1;
+	while(i>=0)
+	{
+		int ris = errorquit(nodo->figli[i]);
+		if(ris == 10)
+			return ris;
+		i--;
+	}
+
+	return 0;
 }
 
 //Funzione che clona un certo processo
@@ -687,7 +684,7 @@ int pspawn(Node* start,char* name) {
 
 int prePSpawn(Node* start, char* name, char* option){
 	int num, i;
-	num = (int)strtol(option, (char **)NULL, 6); //fa schifo
+	num = (int)strtol(option, (char **)NULL, 10); //fa schifo
 
 	if(num < 0)
 		return 11;
@@ -727,17 +724,6 @@ int quit(Node* start) {
 	return ris;
 }
 
-void errorquit(Node* start){
-	int i = start->nFigli - 1;
-	while(i >= 0)
-	{
-		printf("Controllo il processo <%d>...\n",start->figli[i]->pid);
-		errorcloseAll(start->figli[i]);
-		i--;
-	}
-
-	free(start);
-}
 
 int wildcard(char *string, char *pattern) {
 	while(*string)
@@ -834,6 +820,39 @@ int prePClose(Node* padre, char* attributo) {
 
 		return pCloseWildCard(padre, padre, attributo, nome);
 	}
+}
+
+int pexport(Node* nodo)
+{
+	FILE* file  = fopen("assets/log.txt",  "w+");
+	
+	if(file)
+	{
+		int i;
+		for(i = 0; i < nodo->nFigli; i++)
+		{
+			fprintf(file, "%s", "pnew ");
+			fprintf(file, "%s", nodo->figli[i]->name);
+			fprintf(file, "%s", "\n");
+
+			if(nodo->figli[i]->nFigli > 0)
+			{
+				fprintf(file, "%s", "pspawn ");
+				fprintf(file, "%s", nodo->figli[i]->name);
+				fprintf(file, "%s", " ");
+				fprintf(file, "%d", nodo->figli[i]->nFigli);
+				fprintf(file, "%s", "\n");
+			}
+		}
+	}
+	else
+	{
+		fclose(file);
+		return 9;  //File non trovato
+	}
+
+	fclose(file);
+	return 0;
 }
 
 Node* init() {
