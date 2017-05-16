@@ -605,17 +605,52 @@ void killProc(int pid)
 	 kill(pid, SIGTERM);
 }
 
-void errorcloseAll(Node* start) {
-	int i = start->nFigli - 1;
-	while(i >= 0)
-	{
-		errorcloseAll(start->figli[i]);
-		i--;
-	}
+int testPipe(Node* n){
+	n->idPipeLettura = open(n->nomePipeLettura, O_RDONLY); /* Open it for reading */
 
-	killProc(start->systemPid);
-	printf("Processo <%d> terminato\n",start->pid);
-	free(start);
+	if(errno != 0)
+		return 10;
+
+	/* chiude il file */
+	if(close(n->idPipeLettura) == EOF)
+	{
+		perror("Error");
+		return 10;
+	}
+	
+	n->idPipeScrittura = open(n->nomePipeScrittura, O_WRONLY); /* Open it for reading */
+
+	if(errno != 0)
+		return 10;
+
+	/* chiude il file */
+	if(close(n->idPipeScrittura) == EOF)
+	{
+		perror("Error");
+		return 10;
+	}
+	
+	return 0;
+}
+
+void errorcloseAll(Node* start) {
+	if(testPipe(start) != 0)
+	{
+		killProc(start->systemPid);
+		closeAll(start);
+		printf("Processo <%d> terminato\nchiudura dei figli in corso\n",start->pid);
+		free(start);
+	}
+	else
+	{
+		printf("processo <%d> non corrotto, controllo i suoi figli\n",start->pid);
+		int i = start->nFigli - 1;
+		while(i >= 0)
+		{
+			errorcloseAll(start->figli[i]);
+			i--;
+		}
+	}
 }
 
 //Funzione che clona un certo processo
@@ -696,6 +731,7 @@ void errorquit(Node* start){
 	int i = start->nFigli - 1;
 	while(i >= 0)
 	{
+		printf("Controllo il processo <%d>...\n",start->figli[i]->pid);
 		errorcloseAll(start->figli[i]);
 		i--;
 	}
