@@ -19,7 +19,7 @@ OK -> Problema di concorrenza pmanager
 OK -> Phelp più completo
 OK -> Ptree dal processo
 OK -> File open dal pmanager
-Pinfo verbose
+OK -> Pinfo verbose
 Pnew più processi
 Pspawn percentuale per i multipli e magari meno printf dei cloni multipli
 OK -> Plist nodo diverso dal padre
@@ -309,7 +309,7 @@ int ottieniPid(char* test)
 }
 
 //Return -1 se il nodo esisteva già tra i figli successivi di start
-int pnew(Node *start, char* nome,int signalChildren) { //SignalChildren 0 faccio qui il fork, altrimenti lo fa il processo
+int pnew(Node *start, char* nome, int signalChildren) { //SignalChildren 0 faccio qui il fork, altrimenti lo fa il processo
 	contPid++;
 	if(cerca(start, nome) != NULL)
 		return 7;
@@ -368,7 +368,7 @@ int pnew(Node *start, char* nome,int signalChildren) { //SignalChildren 0 faccio
 		else if (p < 0)
 			return 8;
 	}
-	else
+	else if(signalChildren == 1)
 	{
 		char* message = (char*)calloc(MAXLEN,sizeof(char));
 		if(message == NULL)
@@ -378,6 +378,11 @@ int pnew(Node *start, char* nome,int signalChildren) { //SignalChildren 0 faccio
 		strcat(message,n->name);
 		strcat(message," ");
 		strcat(message,strpid);
+		if(signalChildren == 2)
+		{
+			strcat(message," ");
+			strcat(message,"QUIET");
+		}
 		strcat(message,".");
 
 		if(writePipe(start, message) != 0)
@@ -420,6 +425,30 @@ int pnew(Node *start, char* nome,int signalChildren) { //SignalChildren 0 faccio
 		if(tentativi == 3)
 			return 10;*/
 	}
+	else
+	{
+		char* message = (char*)calloc(MAXLEN,sizeof(char));
+		if(message == NULL)
+			return 8;
+
+		strcat(message,"CLON ");
+		strcat(message,n->name);
+		strcat(message," ");
+		strcat(message,strpid);
+		strcat(message,".");
+
+		if(writePipe(start, message) != 0)
+		{
+			printf("Problema riscontrato nelle pipe interne\n");
+			return 10;
+		}
+
+		int k = readPipe(start,test);
+		if(k != 0)
+			return 10;
+		if(strstr(test,"IMPOSSIBILE") != NULL)
+			return 8;
+	}
 
 	int k = readPipe(n, test2);
 
@@ -435,8 +464,8 @@ int pnew(Node *start, char* nome,int signalChildren) { //SignalChildren 0 faccio
 	}
 
 	n->systemPid = ottieniPid(test2);
-
-	printf("%s\n", test2);
+	if(signalChildren != 2)
+		printf("%s\n", test2);
 
 	/*tentativi = 0;
 
@@ -588,8 +617,8 @@ void killProc(int pid)
 }
 
 int testPipe(Node* n){
-	
-	int tmp1 = open(n->nomePipeLettura, O_RDONLY | O_NONBLOCK); // Open it for reading 
+
+	int tmp1 = open(n->nomePipeLettura, O_RDONLY | O_NONBLOCK); // Open it for reading
 
 	if(tmp1 == -1)
 	{
@@ -602,7 +631,7 @@ int testPipe(Node* n){
 		perror("Error");
 		return 10;
 	}
-	
+
 	tmp1 = open(n->nomePipeScrittura, O_WRONLY | O_NONBLOCK); /* Open it for reading */
 
 	if(tmp1 == -1)
@@ -625,7 +654,7 @@ int errorquit(Node* nodo){
 		{
 			killProc(nodo->systemPid);
 			chiudiPipe(nodo);
-	
+
 			int i = nodo->nFigli - 1;
 			while(i>=0)
 			{
@@ -652,9 +681,8 @@ int errorquit(Node* nodo){
 
 //Funzione che clona un certo processo
 //Ipoteticamente la clonazione genera un figlio
-int pspawn(Node* start,char* name) {
+int pspawn(Node* start, char* name, int multiSpawn) {
 	//Cerco il processo da clonare
-	//printf("ENTRO\n");
 	Node *tmp = (Node*)calloc(1, sizeof(Node));
 	if(tmp == NULL)
 		return 9;
@@ -678,24 +706,33 @@ int pspawn(Node* start,char* name) {
 		else
 			childrenName = strcat(childrenName,"_1");
 
-		return pnew(tmp, childrenName, 1);
+		if(multiSpawn == 0)
+			return pnew(tmp, childrenName, 1);
+		else
+			return pnew(tmp, childrenName, 2);
 	}
 }
 
 int prePSpawn(Node* start, char* name, char* option){
-	int num, i;
-	num = (int)strtol(option, (char **)NULL, 10); //fa schifo
+	int num, i, j;
+	num = (int)strtol(option, (char **)NULL, 10);
 
 	if(num < 0)
 		return 11;
 
 	int ris = 0;
-	for(i = 0; i < num; i++)
+	int ratio;
+	ratio = (int)(100/num);
+	for(i = 0, j = 0; i < num; i++, j += ratio)
 	{
-		ris = pspawn(start, name);
+		fflush(stdout);
+		printf("\rProgress: %d %%", j);
+		ris = pspawn(start, name, 1);
 		if(ris != 0)
 			return ris;
 	}
+	printf("\rProgress %d %%", 100);
+	printf("\n");
 
 	return ris;
 }
@@ -825,7 +862,7 @@ int prePClose(Node* padre, char* attributo) {
 int pexport(Node* nodo)
 {
 	FILE* file  = fopen("assets/log.txt",  "w+");
-	
+
 	if(file)
 	{
 		int i;

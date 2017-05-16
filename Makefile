@@ -35,10 +35,7 @@ assets: build
 	@echo "$(TESTO_TEST)" > $(FILE_DIR_OTHER)$(FILE_TEST)
 
 exist:
-	echo "ciao1"
 	@test -f "$(TMP_FILE)" || $(MAKE) assets
-	echo "ciao2"
 
 test: exist
-	echo "ciao3"
 	@./$(FILE_DIR_SAVE)$(MAIN_EXE) $(FILE_DIR_OTHER)$(FILE_TEST)
