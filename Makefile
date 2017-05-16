@@ -17,6 +17,7 @@ CHILD_EXE=child
 CHILD_FILE=child.c
 FILE_TEST=input.txt
 TESTO_TEST=pnew andreamattiafederico\npspawn andreamattiafederico 10
+TMP_FILE=src/tmp
 
 help:
 	@echo -e "$(TESTO)"
@@ -33,5 +34,8 @@ assets: build
 	@mkdir $(FILE_DIR_OTHER)
 	@echo "$(TESTO_TEST)" > $(FILE_DIR_OTHER)$(FILE_TEST)
 
-test: assets
-	./$(FILE_DIR_SAVE)$(MAIN_EXE) $(FILE_DIR_OTHER)$(FILE_TEST)
+exist:
+	@test -f "$(TMP_FILE)" || $(MAKE) assets
+
+test: exist
+	@./$(FILE_DIR_SAVE)$(MAIN_EXE) $(FILE_DIR_OTHER)$(FILE_TEST)

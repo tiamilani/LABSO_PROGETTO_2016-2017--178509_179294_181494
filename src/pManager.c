@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <fcntl.h>
 #include "Node.c"
 
 //Per aumentare la sicurezza del programma, nella libreria andrà implementata la funzione restituisci_radice
@@ -75,6 +76,7 @@ void gestisciErrori(int error)
 			sleep(2);
 			errorquit(padre);
 			printf(ANSI_COLOR_MAGENTA "FATAL ERROR, prova di nuovo, sarai più fortuanto\n" ANSI_COLOR_RESET);
+			system("rm -f assets/Lettura_*; rm -f assets/Scrittura_*;");
 			exit(10);
 			break;
 		case 11:
@@ -105,7 +107,7 @@ int psystem(char *line) {
 				char* ch = calloc(LONGLEN,1);
 				if(ch != NULL)
 				{
-					plist(padre,ch);
+					plist(padre, ch);
 					printf("%s\n", ch);
 				}
 				else
@@ -142,7 +144,7 @@ int psystem(char *line) {
 				gestisciErrori(2);
 				return 0;
 			}
-			else if(strcmp(attributo, "pManager") == 0)
+			else if(strcmp(attributo, "pmanager") == 0 || strcmp(attributo, "pManager") == 0)
 			{
 				gestisciErrori(3);
 				return 0;
@@ -277,17 +279,22 @@ int psystem(char *line) {
 
 void menu()
 {
-	char line[MAX_LENGTH];
+	char *line = (char*)calloc(MAXLEN, sizeof(char));
 
-	int i=0;
-	while(i==0)
+	int i = 0;
+	while(i == 0)
 	{
 		printf("$ ");
-		if (!fgets(line, MAX_LENGTH, stdin))
+		if (fgets(line, MAX_LENGTH, stdin) == NULL)
+		{
+			printf("\nErrore, prego inserire nuovamente il comando\n");
+			fseek(stdin,0,SEEK_END);
+		}
+		else if(line[0] == '\n')
 			printf("Errore, prego inserire nuovamente il comando\n");
 		else
 			i = psystem(line); //esegue quello che c'e' scritto in line
- 	}
+	}
 }
 
 void file(char* nomeFile)
@@ -329,6 +336,16 @@ void file(char* nomeFile)
 
 int main(int argc, char* argv[])
 {
+	int fd = open("src/tmp", O_CREAT | O_WRONLY | O_EXCL, S_IRUSR | S_IWUSR);
+	if(fd != -1)
+		printf("OK\n");
+
+	if (errno == EEXIST)
+	{
+		printf("pManager gia' in esecuzione...\n");
+		exit(3);
+	}
+
 	padre = init();
 
 	if(padre == NULL)
@@ -337,7 +354,12 @@ int main(int argc, char* argv[])
 		exit(2);
 	}
 
-	if(signal(SIGINT,SIG_IGN) == SIG_ERR)
+	if(signal(SIGINT, SIG_IGN) == SIG_ERR)
+	{
+		gestisciErrori(10);
+		exit(3);
+	}
+	if(signal(SIGTSTP, SIG_IGN) == SIG_ERR)
 	{
 		gestisciErrori(10);
 		exit(3);
@@ -350,6 +372,8 @@ int main(int argc, char* argv[])
 		file(argv[1]);
 		menu();
 	}
+
+	system("rm -f src/tmp;");
 
 	return 0;
 }

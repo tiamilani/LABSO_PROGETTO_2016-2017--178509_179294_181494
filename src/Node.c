@@ -10,19 +10,19 @@
 #include <sys/types.h>
 #include <sys/select.h>
 /*
-System rm della pipe in caso di error quit
+OK -> System rm della pipe in caso di error quit
 Ricreare la pipe tentare
 Non fatal error ma error 12 processi killati ma solo quelli con pipe rotta, esecuzione non interrotta
-Problema di concorrenza pmanager
+OK -> Problema di concorrenza pmanager
 
-Phelp più completo
-Ptree dal processo
-File open dal pmanager
+OK -> Phelp più completo
+OK -> Ptree dal processo
+OK -> File open dal pmanager
 Pinfo verbose
 Pnew più processi
 Pspawn percentuale per i multipli e magari meno printf dei cloni multipli
-Plist nodo diverso dal padre
-Plist simil ls (per le colonne)
+OK -> Plist nodo diverso dal padre
+OK -> Plist simil ls (per le colonne)
 Prmall con wildcard
 Esporta gerarchia attuale
 */
@@ -171,42 +171,33 @@ char* getFatherName(Node* n) {
 
 int pinfo(Node* n, char* str) {
 
-	int spacing = 0;
-	int i;
-
-	spacing = strlen(n->name);
-	strcat(str,"Nome");
-	for(i=0;i<spacing;i++)
-		strcat(str," ");
-
-	strcat(str,"Pid");
-	spacing = strlen(getPid(n));
-	for(i=0;i<spacing;i++)
-		strcat(str," ");
-
-	strcat(str,"Padre");
-
-	spacing = strlen(getFatherName(n));
-	for(i=0;i<spacing;i++)
-		strcat(str," ");
-
-	strcat(str,"PPid\n");
-
+	strcat(str,"Nome\t\t");
 	strcat(str, getName(n));
-	for(i=0;i<strlen("Nome");i++)
-		strcat(str," ");
+	strcat(str, "\n");
 
-	strcat(str,getPid(n));
+	strcat(str,"Pid\t\t");
+	strcat(str, getPid(n));
+	strcat(str, "\n");
 
-	for(i=0;i<strlen("Pid");i++)
-		strcat(str," ");
-
+	strcat(str,"Padre\t\t");
 	strcat(str, getFatherName(n));
+	strcat(str, "\n");
 
-	for(i = 0; i < strlen("Padre"); i++)
-		strcat(str," ");
-
+	strcat(str,"PPid\t\t");
 	strcat(str, getFatherPid(n));
+	strcat(str, "\n");
+
+	strcat(str,"numero figli\t");
+	strcat(str, getnFigli(n));
+	strcat(str, "\n");
+
+	strcat(str,"System pid\t");
+	char* tmp = (char*)calloc(MINLEN, sizeof(char*));
+	snprintf(tmp, MINLEN, "%d", n->systemPid);
+	strcat(str,tmp);
+
+	strcat(str, "\n");
+
 	return 0;
 }
 
@@ -224,10 +215,10 @@ void plist(Node* nodo, char* ch) {
 
 	strcat(ch, getName(nodo));
 	strcat(ch, "\n");
-	int i;
 
+	int i;
 	for(i = 0; i < nodo->nFigli; i++)
-		plist(nodo->figli[i],ch);
+		plist(nodo->figli[i], ch);
 }
 
 void ptree(Node* nodo, int tab,char* ch) {
@@ -241,7 +232,6 @@ void ptree(Node* nodo, int tab,char* ch) {
 			longlen = longlen*2;
 		}
 	}
-
 
 	//strcat(ch,color(tab));
 
@@ -662,7 +652,7 @@ int pspawn(Node* start,char* name) {
 
 int prePSpawn(Node* start, char* name, char* option){
 	int num, i;
-	num = atoi(option); //fa schifo
+	num = (int)strtol(option, (char **)NULL, 6); //fa schifo
 
 	if(num < 0)
 		return 11;
@@ -816,7 +806,7 @@ Node* init() {
 		padre->pid = contPid;
 		padre->systemPid = getpid();
 		padre->father = NULL;
-		padre->name = "pManager";
+		padre->name = "pmanager";
 		padre->nFigli = 0;
 		padre->numCloni = 0;
 		return padre;

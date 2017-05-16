@@ -20,17 +20,17 @@ int returnErrno()
 		errno = 0;
 		return -1;
 	}
-	
+
 	return 0;
 }
 
 int readLine (int idPipeLettura,char *str) {
 	int n;
 
-	do {  //Read characters until '\0' or end-of-input 
-		n = read(idPipeLettura, str, 1); //Read one character 
+	do {  //Read characters until '\0' or end-of-input
+		n = read(idPipeLettura, str, 1); //Read one character
 	} while (n > 0 && *str++ != '\0'); //Controllo che non ci siano errori
-	
+
 	return returnErrno();
 }
 
@@ -38,12 +38,12 @@ int readPipe(char *str) {
 	//char* str = (char*)calloc(MAXLEN,sizeof(char));
 
 	int fd = open(pipeScrittura, O_RDONLY); /* Open it for reading */ /* Open it for reading */
-	
+
 	if(errno != 0)
 		return 10;
-	
+
 	int ris = readLine(fd, str); /* Display received messages */
-	
+
 	/* chiude il file */
 	if(close(fd) == EOF)
 	{
@@ -56,7 +56,7 @@ int readPipe(char *str) {
 
 int writePipe(char* nomePipe, char* str) {
 	int fd;
-	
+
 	fd = open(nomePipe, O_WRONLY); /* Open it for reading */
 	if(returnErrno() != 0)
 		return 10;
@@ -64,13 +64,13 @@ int writePipe(char* nomePipe, char* str) {
 	int n = write (fd, str, strlen(str)); /* Write message down pipe */
 	if(n < 0)
 		return 10;
-	
+
 	if(close(fd) == EOF)
 	{
 		perror("Error");
 		return 10;
 	}
-	
+
 	return 0;
 }
 
@@ -97,7 +97,7 @@ int generaFiglio(char* status)
 
 	sprintf(pch, "Clonazione avvenuta: proceso <%s> generato", id);
 	writePipe(pipeLettura, pch);
-	
+
 	return 0;
 }
 
@@ -107,16 +107,16 @@ int main (int argc, char* argv[])
 	char* status = (char*)calloc(MAXLEN, sizeof(char));
 	pipeLettura = (char*)calloc(PIPELEN, sizeof(char));
 	pipeScrittura = (char*)calloc(PIPELEN, sizeof(char));
-	
+
 	if(status == NULL || pipeLettura == NULL || pipeScrittura == NULL)
 	{
 		strcpy(message,"ERRORI IN FASE DI AVVIO");
 		if(writePipe(pipeLettura, message) != 0)
 			printf("ERRORE FATALE NELL'APERTURA DELLA PIPE DA PARTE DEL PROCESSO,\nCHIUSURA DEL PROCESSO IN CORSO\nUTILIZZARE IL COMDANDO errorquit PER CHIUDERE LA SHELL\n");
-			
+
 		return 0;
 	}
-	
+
 	snprintf(pipeLettura, PIPELEN, "%s%s", "assets/Lettura_", argv[1]);
 	snprintf(pipeScrittura, PIPELEN, "%s%s", "assets/Scrittura_", argv[1]);
 
@@ -134,7 +134,7 @@ int main (int argc, char* argv[])
 			printf("ERRORE FATALE NELL'APERTURA DELLA PIPE DA PARTE DEL PROCESSO,\nCHIUSURA DEL PROCESSO IN CORSO\nUTILIZZARE IL COMDANDO errorquit PER CHIUDERE LA SHELL\n");
 			return 0;
 		}
-		
+
 
 		if(strlen(status) > 4)
 			if(generaFiglio(status) != 0)
