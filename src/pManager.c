@@ -145,7 +145,7 @@ int psystem(char *line) {
 				if(ris != 0)
 					gestisciErrori(ris);
 				else
-					printf("Export del file avvenuto correttamente, trovi il file in assets/log.txt\n");
+					printf("Export del file avvenuto correttamente, trovi il file in src/log.txt\n");
 			}
 			else
 				gestisciErrori(5);
@@ -350,12 +350,10 @@ void file(char* nomeFile)
 int main(int argc, char* argv[])
 {
 	int fd = open("src/tmp", O_CREAT | O_WRONLY | O_EXCL, S_IRUSR | S_IWUSR);
-	if(fd != -1)
-		printf("OK\n");
 
 	if (errno == EEXIST)
 	{
-		printf("pManager gia' in esecuzione...\n");
+		printf("pManager gia' in esecuzione... terminare l'esecuzione in modo corretto!\nIn caso di necessita' terminare il processo pManager, eliminare il file src/tmp e riavviare pManager.\n");
 		exit(3);
 	}
 

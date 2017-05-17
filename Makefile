@@ -20,7 +20,7 @@ TESTO_TEST=pnew ciao\npspawn ciao 10
 TMP_FILE=src/tmp
 
 help:
-	@echo -e "$(TESTO)"
+	@echo "$(TESTO)"
 
 clean:
 	@rm -rf $(FILE_DIR_SAVE) $(FILE_DIR_OTHER)

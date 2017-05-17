@@ -10,24 +10,6 @@
 #include <sys/types.h>
 #include <sys/select.h>
 
-/*
-OK -> System rm della pipe in caso di error quit
-Ricreare la pipe tentare
-Non fatal error ma error 12 processi killati ma solo quelli con pipe rotta, esecuzione non interrotta
-OK -> Problema di concorrenza pmanager
-
-OK -> Phelp più completo
-OK -> Ptree dal processo
-OK -> File open dal pmanager
-OK -> Pinfo verbose
-Pnew più processi
-Pspawn percentuale per i multipli e magari meno printf dei cloni multipli
-OK -> Plist nodo diverso dal padre
-OK -> Plist simil ls (per le colonne)
-Prmall con wildcard
-Esporta gerarchia attuale
-*/
-
 char* color(int num)
 {
 	int color = num%6;
@@ -64,7 +46,7 @@ int returnErrno() {
 
 char* phelp() {
 	//Stampa un elenco dei comandi disponibili
-	return "Comandi disponibili utilizzando la shell virtuale pManager:\n\tphelp : stampa questo elenco\n\tplist : elenca i processi generati dalla shell custom\n\tplist <nome processo>: elenca i processi generati dalla shell custom partendo dal processo specificato\n\tpnew <nome> : crea un nuovo processo con nome <nome>\n\tpnew <nome1> ... <nome n> : crea n nuovi processi con nomi rispettivamente da <nome1> a <nome n>\n\tpinfo <nome> : fornisce informazioni sul processo <nome>\n\tpinfo <nome> -v: fornisce informazioni sul processo <nome> con l'argomento '-v' si ottiene un output verboso\n\tpclose <nome> : chiede al processo <nome> di chiudersi\n\tpclose <nome>* : chiede al processo <nome> di chiudersi dopo di che utlizzando '*' come wildcard chiderà a tutti i processi che iniziano con <nome> e qualsiasi altro carattere dopo di chiudersi\n\tquit : esce dalla shell custom\n\tpspawn <nome> : chiede al processo <nome> di clonarsi creando <nome_i> con i progressivo\n\tpspawn <nome> <n>: chiede al processo <nome> di clonarsi <n> volte creando <nome_i> con i progressivo processi cloni di <nome>\n\tprmall <nome> : chiede al processo <nome> di chiudersi chiudendo anche eventuali cloni\n\tprmall <nome>*: chiede al processo <nome> di chiudersi chiudendo anche eventuali cloni, dopo di che come per il pclose fa la stessa cosa con tutti i processi che hanno un qualsiasi carattere dopo <nome>\n\tptree : mostra la gerarchia completa dei processi generati attivi\n\tptree <nome>: mostra la gerarchia completa dei processi generati attivi partendo da <nome>\n\tpfile <nome>: apre il file <nome> e ne utilizza i comandi all'interno\n\tpexport: esporta su di un file locale la gerarchia attuale\n";
+	return "NOME\n\tpManager - Gestore processi attraverso una shell virtuale\n\nUTILIZZO\n\tpmanager\t\t->\tesegue la shell custom\n\tpmanager [input_file]\t->\tesegue la shell custom eseguendo i comandi definiti in inputFile\n\nCOMANDI SHELL\n\tphelp\n\t\tstampa questo elenco\n\n\tplist\n\t\telenca i processi generati dalla shell custom\n\n\tplist [nome]\n\t\telenca i processi generati dalla shell custom partendo partendo da [nome]\n\n\tpnew [nome]\n\t\tcrea un nuovo processo con nome [nome]\n\n\tpinfo [nome]\n\t\tfornisce informazioni sul processo [nome]\n\n\tpclose [nome]\n\t\tchiede al processo [nome] di chiudersi\n\n\tpclose [nome*]\n\t\tchiede al processo [nome] di chiudersi dopo di che utilizzando '*' come wildcard chiederà a tutti i processi che iniziano con [nome] e qualsiasi altro carattere dopo di chiudersi\n\n\tpclose [*nome]\n\t\tchiede al processo <nome> di chiudersi dopo di che utilizzando '*' come wildcard chiederà a tutti i processi che finiscono con [nome] e qualsiasi altro carattere prima di chiudersi\n\n\tquit\n\t\tesce dalla shell custom\n\n\tpspawn [nome]\n\t\tchiede al processo [nome] di clonarsi creando [nome_i] con i progressivo\n\n\tpspawn [nome] [n]\n\t\tchiede al processo [nome] di clonarsi [n] volte creando [nome_i] con i progressivo\n\n\tprmall [nome]\n\t\tchiede al processo [nome] di chiudersi chiudendo anche eventuali cloni\n\n\tptree\n\t\tmostra la gerarchia completa dei processi generati\n\n\tptree [nome]\n\t\tmostra la gerarchia completa dei processi generati partendo da [nome]\n\n\tpfile [nome]\n\t\tapre il file [nome] e ne utilizza i comandi all'interno\n\n\tpexport\n\t\tesporta su di un file locale la gerarchia attuale\n\n\t";
 }
 
 int readLine (int idPipeLettura,char *str) {
@@ -508,7 +490,7 @@ int pnew(Node *start, char* nome, int signalChildren) { //SignalChildren 0 facci
 }
 
 //Funzione che permette di chiudere un figlio attraverso il padre
-int fatherCloseMe(Node* father, char *childName,int flag) {
+int fatherCloseMe(Node* father, char *childName, int flag, int multiQuit) {
 	//Trovo il processo tra i miei figli per avere l'indice i esimo
 	int i = 0;
 	Node *tmp = (Node*)calloc(1, sizeof(Node));
@@ -547,7 +529,8 @@ int fatherCloseMe(Node* father, char *childName,int flag) {
 			printf("Problema riscontrato nelle pipe interne\n");
 			return 10;
 		}
-		printf("%s\n", test);
+		if(multiQuit != 1)
+			printf("%s\n", test);
 	}
 	//Sposto di una posizione tutti i figli che stanno alla destra del figlio che ho eliminato
 	spostaASinistra(i, father->figli, father->nFigli);
@@ -567,14 +550,14 @@ int fatherCloseMe(Node* father, char *childName,int flag) {
 }
 
 //closeMe() controllo se ho figli, se non ne ho mi chiudo, altrimenti errore
-int closeMe(Node* nodo) {
+int closeMe(Node* nodo, int multiQuit) {
 	//devo chiudermi
 	//Controllo se ho figli
 	if(nodo->nFigli != 0)
 		return 6;
 
 	//chiedo a mio padre di inviarmi il segnale di chiusura al processo
-	return fatherCloseMe(nodo->father, nodo->name,0);
+	return fatherCloseMe(nodo->father, nodo->name, 0, multiQuit);
 }
 
 //Funzione per chiudere un processo con <name>
@@ -587,7 +570,7 @@ int pClose(Node* start, char* name) {
 		return 1; //Errore, nodo non trovato
 	else
 	{
-		int ris = closeMe(tmp);
+		int ris = closeMe(tmp, 0);
 		//Dealloco la mia memoria
 		if(ris == 0)
 			free(tmp);
@@ -596,15 +579,15 @@ int pClose(Node* start, char* name) {
 	}
 }
 
-int closeAll(Node* start) {
+int closeAll(Node* start, int multiQuit) {
 	int ris = 0;
 	while(start->nFigli > 0)
-		ris = closeAll(start->figli[0]);
+		ris = closeAll(start->figli[0], multiQuit);
 
 	if(ris != 0)
 		return ris;
 
-	ris = closeMe(start);
+	ris = closeMe(start, multiQuit);
 	if(ris == 0)
 		free(start);
 
@@ -623,12 +606,12 @@ void errorcloseAll(Node* start) {
  		errorcloseAll(start->figli[i]);
  		i--;
  	}
- 	
+
  	killProc(start->systemPid);
  	printf("Processo <%d> terminato\n",start->pid);
   	free(start);
   }
-  
+
   void errorquit(Node* start){
  	int i = start->nFigli - 1;
  	while(i >= 0)
@@ -636,7 +619,7 @@ void errorcloseAll(Node* start) {
  		errorcloseAll(start->figli[i]);
  		i--;
  	}
-  
+
   	free(start);
   }
 
@@ -676,26 +659,22 @@ int pspawn(Node* start, char* name, int multiSpawn) {
 
 int prePSpawn(Node* start, char* name, char* option){
 	int num, i;
-	double j;
 	num = (int)strtol(option, (char **)NULL, 10);
 
 	if(num < 0)
 		return 11;
 
 	int ris = 0;
-	double ratio;
-	ratio = (double)(100.0/(double)num);
-	for(i = 0, j = 0; i < num; i++, j += ratio)
+	for(i = 0; i < num; i++)
 	{
 		fflush(stdout);
-		printf("\rProgress: %.1f %%", j);
+		printf("\rCloning... %d/%d", i, num);
 		ris = pspawn(start, name, 1);
 		if(ris != 0)
 			return ris;
 	}
 	fflush(stdout);
-	printf("\rProgress: %d %%       ", 100);
-	printf("\n");
+	printf("\rCloning... %d/%d -> DONE\n", i, num);
 
 	return ris;
 }
@@ -711,15 +690,30 @@ int prmall(Node* start, char* name) {
 	if(tmp == NULL)
 		return 1; //Errore, nodo non trovato
 	else
-		return closeAll(tmp);
+		return closeAll(tmp, 0);
 }
 
 int quit(Node* start) {
 	int ris = 0;
-	while(start->nFigli > 0)
-		ris = closeAll(start->figli[0]);
+	float j = 0;
+	int n = start->nFigli;
+
+	float ratio;
+	ratio = (float)(100.0/(float)n);
+
+	while(n > 0)
+	{
+		fflush(stdout);
+		printf("\rQuitting... %.1f %%", j);
+		ris = closeAll(start->figli[0], 1);
+		n = start->nFigli;
+		j += ratio;
+	}
+	fflush(stdout);
+	printf("\rQuitting... %d %% -> DONE\n", 100);
 
 	free(start);
+	printf("Chiusura di tutti i processi avvenuta.\n");
 
 	return ris;
 }
@@ -824,7 +818,7 @@ int prePClose(Node* padre, char* attributo) {
 
 int pexport(Node* nodo)
 {
-	FILE* file  = fopen("assets/log.txt",  "w+");
+	FILE* file  = fopen("src/log.txt",  "w+");
 
 	if(file)
 	{
