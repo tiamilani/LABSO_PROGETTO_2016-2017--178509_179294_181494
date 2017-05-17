@@ -616,68 +616,29 @@ void killProc(int pid)
 	 kill(pid, SIGTERM);
 }
 
-int testPipe(Node* n){
-
-	int tmp1 = open(n->nomePipeLettura, O_RDONLY | O_NONBLOCK); // Open it for reading
-
-	if(tmp1 == -1)
-	{
-		perror("ERROR");
-		return 10;
-	}
-
-	if(close(tmp1) == EOF)
-	{
-		perror("Error");
-		return 10;
-	}
-
-	tmp1 = open(n->nomePipeScrittura, O_WRONLY | O_NONBLOCK); /* Open it for reading */
-
-	if(tmp1 == -1)
-		return 10;
-
-	/* chiude il file */
-	if(close(tmp1) == EOF)
-	{
-		perror("Error");
-		return 10;
-	}
-
-	return 0;
-}
-
-int errorquit(Node* nodo){
-	if(strcmp(getName(nodo),"pmanager") != 0)
-	{
-		if(testPipe(nodo) != 0)
-		{
-			killProc(nodo->systemPid);
-			chiudiPipe(nodo);
-
-			int i = nodo->nFigli - 1;
-			while(i>=0)
-			{
-				closeAll(nodo->figli[i]);
-				i--;
-			}
-
-			if(fatherCloseMe(getFather(nodo),getName(nodo),1) == 10)
-				return 10;
-		}
-	}
-
-	int i = nodo->nFigli - 1;
-	while(i>=0)
-	{
-		int ris = errorquit(nodo->figli[i]);
-		if(ris == 10)
-			return ris;
-		i--;
-	}
-
-	return 0;
-}
+void errorcloseAll(Node* start) {
+	int i = start->nFigli - 1;
+ 	while(i >= 0)
+ 	{
+ 		errorcloseAll(start->figli[i]);
+ 		i--;
+ 	}
+ 	
+ 	killProc(start->systemPid);
+ 	printf("Processo <%d> terminato\n",start->pid);
+  	free(start);
+  }
+  
+  void errorquit(Node* start){
+ 	int i = start->nFigli - 1;
+ 	while(i >= 0)
+ 	{
+ 		errorcloseAll(start->figli[i]);
+ 		i--;
+ 	}
+  
+  	free(start);
+  }
 
 //Funzione che clona un certo processo
 //Ipoteticamente la clonazione genera un figlio
@@ -714,24 +675,26 @@ int pspawn(Node* start, char* name, int multiSpawn) {
 }
 
 int prePSpawn(Node* start, char* name, char* option){
-	int num, i, j;
+	int num, i;
+	double j;
 	num = (int)strtol(option, (char **)NULL, 10);
 
 	if(num < 0)
 		return 11;
 
 	int ris = 0;
-	int ratio;
-	ratio = (int)(100/num);
+	double ratio;
+	ratio = (double)(100.0/(double)num);
 	for(i = 0, j = 0; i < num; i++, j += ratio)
 	{
 		fflush(stdout);
-		printf("\rProgress: %d %%", j);
+		printf("\rProgress: %.1f %%", j);
 		ris = pspawn(start, name, 1);
 		if(ris != 0)
 			return ris;
 	}
-	printf("\rProgress %d %%", 100);
+	fflush(stdout);
+	printf("\rProgress: %d %%       ", 100);
 	printf("\n");
 
 	return ris;

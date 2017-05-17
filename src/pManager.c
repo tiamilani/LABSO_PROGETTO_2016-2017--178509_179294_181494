@@ -8,6 +8,11 @@
 //Per aumentare la sicurezza del programma, nella libreria andrà implementata la funzione restituisci_radice
 //Che mi ritornerà la radice già creata, da lì io potrò fare solo le operazioni sulla radice
 
+/*
+ * da fare:
+ * progress in tutte le azioni che richiedono più di una stampa
+*/
+
 Node *padre;
 #define MAX_LENGTH 1024
 
@@ -76,7 +81,7 @@ void gestisciErrori(int error)
 			sleep(2);
 			errorquit(padre);
 			printf(ANSI_COLOR_MAGENTA "FATAL ERROR, prova di nuovo, sarai più fortuanto\n" ANSI_COLOR_RESET);
-			system("rm -f assets/Lettura_*; rm -f assets/Scrittura_*;");
+			system("rm -f assets/Lettura_*; rm -f assets/Scrittura_*; rm src/tmp;");
 			exit(10);
 			break;
 		case 11:
@@ -131,10 +136,8 @@ int psystem(char *line) {
 			}
 			else if(strcmp(comando, "errorquit") == 0)
 			{
-				int ris = errorquit(padre);
-				if(ris != 0)
-					gestisciErrori(ris);
-				//return 1;
+				errorquit(padre);
+				return 1;
 			}
 			else if(strcmp(comando, "pexport") == 0)
 			{
