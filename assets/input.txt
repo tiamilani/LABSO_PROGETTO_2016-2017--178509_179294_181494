@@ -1,2 +1,0 @@
-pnew ciao
-pspawn ciao 10

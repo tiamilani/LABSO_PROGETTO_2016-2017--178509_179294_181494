@@ -24,15 +24,18 @@ help:
 
 clean:
 	@rm -rf $(FILE_DIR_SAVE) $(FILE_DIR_OTHER)
+	@echo "Eliminazione file completata..."
 
 build: clean
 	@mkdir $(FILE_DIR_SAVE)
 	@gcc -o $(FILE_DIR_SAVE)$(MAIN_EXE) $(FILE_DIR_FIND)$(MAIN_FILE)
 	@gcc -o $(FILE_DIR_SAVE)$(CHILD_EXE) $(FILE_DIR_FIND)$(CHILD_FILE)
-
+	@echo "Compilazione file completata..."
+	
 assets: build
 	@mkdir $(FILE_DIR_OTHER)
 	@echo "$(TESTO_TEST)" > $(FILE_DIR_OTHER)$(FILE_TEST)
+	@echo "Creazione file di test completata..."
 
 exist:
 	@test -f "$(TMP_FILE)" || $(MAKE) assets
