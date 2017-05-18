@@ -110,10 +110,6 @@ int chiudiPipe(Node* nodo) {
 	close(nodo->idPipeLettura);
 	close(nodo->idPipeScrittura);
 	
-	//Controllo eventuali errori nella chiusura dei file
-	if(returnErrno() != 0)
-		return 10;
-	
 	//Rimuovo le pipe
 	unlink(nodo->nomePipeLettura);
 	unlink(nodo->nomePipeScrittura);
@@ -314,8 +310,7 @@ void spostaASinistra(int i, Node** v, int n) {
 }
 
 //Funzione per ottenere il pid di un processo da un messaggio che mi è appena arrivato
-int ottieniPid(char* test)
-{
+int ottieniPid(char* test) {
 	char* testo = (char*)calloc(MAXLEN, sizeof(char));
 	char* pid = (char*)calloc(MINLEN, sizeof(char));
 	
@@ -472,30 +467,14 @@ int pnew(Node *start, char* nome, int signalChildren) { //SignalChildren 0 facci
 
 	//mi ricavo il pid di sistema che mi è stato passato, in modo che non sia visibile all'utente
 	n->systemPid = ottieniPid(test2);
+	if(n->systemPid == -1)
+	{
+		printf("ERRORE nella lettura del messaggio ricevuto\nNon riesco a ricavare il pid di sistema\n");
+		return 10;
+	}
 	if(signalChildren != 2) //In caso di verbose stampo
 		printf("%s\n", test2);
-
-	/*tentativi = 0;
-
-	do{
-		int k = readPipe(n,test)
-		if(k != 0 && k != -1)
-			return 10;
-
-		if(strstr(test, "terminato") != NULL)
-		{
-			printf("%s\n", test);
-			break;
-		}
-		else
-			printf("Non ho ricevuto risposta dal processo...riprovo");
-
-		tentativi++;
-	}while(tentativi < 3)
-
-	if(tentativi == 3)
-		return 10;*/
-
+ 
 	//Riduco di una dimensione la memoria allocata al vettore dei figli
 	copiaVettore(vettoreFigli, start->figli, start->nFigli);
 	//free(start->figli);
@@ -590,6 +569,9 @@ int closeMe(Node* nodo, int multiQuit) {
 int pClose(Node* start, char* name) {
 
 	Node *tmp = (Node*)calloc(1, sizeof(Node));
+	if(tmp == NULL)
+		return 9;
+		
 	tmp = cerca(start, name);
 
 	if(tmp == NULL)
