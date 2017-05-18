@@ -112,8 +112,11 @@ int psystem(char *line) {
 				char* ch = calloc(LONGLEN,1);
 				if(ch != NULL)
 				{
-					plist(padre, ch);
-					printf("%s\n", ch);
+					int ris = plist(padre, ch);
+					if(ris != 0)
+						gestisciErrori(ris);
+					else
+						printf("%s\n", ch);
 				}
 				else
 					gestisciErrori(9);

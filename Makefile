@@ -16,7 +16,7 @@ MAIN_FILE=pManager.c
 CHILD_EXE=child
 CHILD_FILE=child.c
 FILE_TEST=input.txt
-TESTO_TEST=pnew ciao\npspawn ciao 10
+TESTO_TEST=pnew andreamattiafederico01\npnew andreamattiafederico02\npnew andreamattiafederico03\npspawn andreamattiafederico03 6\npspawn andreamattiafederico03_3 6\npspawn andreamattiafederico03_3_3 4\npspawn andreamattiafederico03_3_3_2 4\npspawn andreamattiafederico03_3_3_2 4\npspawn andreamattiafederico03_3_3_2_2 2\npspawn andreamattiafederico03_3_3_2_2_1 2\npspawn andreamattiafederico03_3_3_2_2_1_1\npnew andreamattiafederico04\npnew andreamattiafederico05\npnew andreamattiafederico06\npspawn andreamattiafederico06 6\npspawn andreamattiafederico06_3 6\npspawn andreamattiafederico06_3_3 4\npspawn andreamattiafederico06_3_3_2 4\npspawn andreamattiafederico06_3_3_2_2 4\npspawn andreamattiafederico06_3_3_2_2_2 2\npspawn andreamattiafederico06_3_3_2_2_2_1 2\npspawn andreamattiafederico06_3_3_2_2_2_1_1\npnew andreamattiafederico07\npnew andreamattiafederico08\npnew andreamattiafederico09
 TMP_FILE=src/tmp
 
 help:

@@ -10,66 +10,46 @@
 #include <sys/types.h>
 #include <sys/select.h>
 
-char* color(int num)
-{
-	int color = num%6;
-
-	switch(color)
-	{
-		case 1:
-			return ANSI_COLOR_RED_BG;
-		case 2:
-			return ANSI_COLOR_GREEN_BG;
-		case 3:
-			return ANSI_COLOR_YELLOW_BG;
-		case 4:
-			return ANSI_COLOR_BLUE_BG;
-		case 5:
-			return ANSI_COLOR_MAGENTA_BG;
-		case 6:
-			return ANSI_COLOR_CYAN_BG;
-		default:
-			return ANSI_COLOR_RESET_BG;
-	}
-}
-
+//Return -1 se errno è stato modificato, altrimenti 0
 int returnErrno() {
 	if(errno != 0)
 	{
-		//perror("ERROR: ");
-		//errno = 0;
 		return -1;
 	}
 
 	return 0;
 }
 
+//Stampa un elenco dei comandi disponibili
 char* phelp() {
-	//Stampa un elenco dei comandi disponibili
 	return "NOME\n\tpManager - Gestore processi attraverso una shell virtuale\n\nUTILIZZO\n\tpmanager\t\t->\tesegue la shell custom\n\tpmanager [input_file]\t->\tesegue la shell custom eseguendo i comandi definiti in inputFile\n\nCOMANDI SHELL\n\tphelp\n\t\tstampa questo elenco\n\n\tplist\n\t\telenca i processi generati dalla shell custom\n\n\tplist [nome]\n\t\telenca i processi generati dalla shell custom partendo partendo da [nome]\n\n\tpnew [nome]\n\t\tcrea un nuovo processo con nome [nome]\n\n\tpinfo [nome]\n\t\tfornisce informazioni sul processo [nome]\n\n\tpclose [nome]\n\t\tchiede al processo [nome] di chiudersi\n\n\tpclose [nome*]\n\t\tchiede al processo [nome] di chiudersi dopo di che utilizzando '*' come wildcard chiederà a tutti i processi che iniziano con [nome] e qualsiasi altro carattere dopo di chiudersi\n\n\tpclose [*nome]\n\t\tchiede al processo <nome> di chiudersi dopo di che utilizzando '*' come wildcard chiederà a tutti i processi che finiscono con [nome] e qualsiasi altro carattere prima di chiudersi\n\n\tquit\n\t\tesce dalla shell custom\n\n\tpspawn [nome]\n\t\tchiede al processo [nome] di clonarsi creando [nome_i] con i progressivo\n\n\tpspawn [nome] [n]\n\t\tchiede al processo [nome] di clonarsi [n] volte creando [nome_i] con i progressivo\n\n\tprmall [nome]\n\t\tchiede al processo [nome] di chiudersi chiudendo anche eventuali cloni\n\n\tptree\n\t\tmostra la gerarchia completa dei processi generati\n\n\tptree [nome]\n\t\tmostra la gerarchia completa dei processi generati partendo da [nome]\n\n\tpfile [nome]\n\t\tapre il file [nome] e ne utilizza i comandi all'interno\n\n\tpexport\n\t\tesporta su di un file locale la gerarchia attuale\n\n\t";
 }
 
+//Legge una stringa dalla pipe che gli viene passata
 int readLine (int idPipeLettura,char *str) {
 	int n;
 
 	do {  //Read characters until '\0' or end-of-input
 		n = read(idPipeLettura, str, 1); //Read one character
 	} while (n > 0 && *str++ != '\0'); //Controllo che non ci siano errori
-
+	
+	//Return -1 se ci sono stati errori
 	return returnErrno();
 }
 
+//Apro una pipe e mi metto in lettura, metto la stringa letta in str
 int readPipe(Node* nodo,char *str) {
-	//char* str = (char*)calloc(MAXLEN,sizeof(char));
 
-	nodo->idPipeLettura = open(nodo->nomePipeLettura, O_RDONLY); /* Open it for reading */
+	nodo->idPipeLettura = open(nodo->nomePipeLettura, O_RDONLY); // Open it for reading
 
+	//Se ci sono stati errori nell'apertura della pipe ritorno un errore 10
 	if(errno != 0)
 		return 10;
 
-	int ris = readLine(nodo->idPipeLettura,str); /* Display received messages */
+	//Leggo dalla pipe
+	int ris = readLine(nodo->idPipeLettura,str);
 
-	/* chiude il file */
+	//chiude il file
 	if(close(nodo->idPipeLettura) == EOF)
 	{
 		perror("Error");
@@ -79,15 +59,21 @@ int readPipe(Node* nodo,char *str) {
 	return ris;
 }
 
+//Scrivo sulla pipe
 int writePipe(Node* nodo, char* str) {
-	nodo->idPipeScrittura = open(nodo->nomePipeScrittura, O_WRONLY); /* Open it for reading */
+	
+	//Tento di aprire la pipe interessata
+	nodo->idPipeScrittura = open(nodo->nomePipeScrittura, O_WRONLY);
+	
 	if(returnErrno() != 0)
 	{
+		//Se ci sono stati errori lo stampo a video e ritorno
 		printf("ERRORE NELL'APERTURA DELLA PIPE\n");
 		return 10;
 	}
 
-	int n = write (nodo->idPipeScrittura, str, strlen(str)); /* Write message down pipe */
+	//Scrivo il messaggio
+	int n = write (nodo->idPipeScrittura, str, strlen(str));
 	if(n < 0)
 		return 10;
 
@@ -100,82 +86,124 @@ int writePipe(Node* nodo, char* str) {
 	return 0;
 }
 
+//Creo le pipe che vengono utilizzate
 int creaPipe(Node* nodo) {
+	//Rimuovo le pipe eventualmente residue
 	unlink(nodo->nomePipeLettura);
 	unlink(nodo->nomePipeScrittura);
 
+	//Reimposto errno, dato che se le pipe non vengano trovate modificano errno
 	errno = 0;
 
-	mknod(nodo->nomePipeLettura, S_IFIFO, 0); /* Create named pipe */
-	chmod(nodo->nomePipeLettura, 0666); /* Change its permissions */
+	mknod(nodo->nomePipeLettura, S_IFIFO, 0); // Create named pipe
+	chmod(nodo->nomePipeLettura, 0666); // Change its permissions
 
-	mknod (nodo->nomePipeScrittura, S_IFIFO, 0); /* Create named pipe */
-	chmod (nodo->nomePipeScrittura, 0666); /* Change its permissions */
+	mknod (nodo->nomePipeScrittura, S_IFIFO, 0); // Create named pipe
+	chmod (nodo->nomePipeScrittura, 0666); // Change its permissions
 
 	return returnErrno();
 }
 
-void chiudiPipe(Node* nodo) {
+//Chiudo le pipe 
+int chiudiPipe(Node* nodo) {
+	//Chiudo i file descriptor
 	close(nodo->idPipeLettura);
 	close(nodo->idPipeScrittura);
+	
+	//Controllo eventuali errori nella chiusura dei file
+	if(returnErrno() != 0)
+		return 10;
+	
+	//Rimuovo le pipe
 	unlink(nodo->nomePipeLettura);
 	unlink(nodo->nomePipeScrittura);
+	
+	return 0;
 }
 
+//Ritorno il pid come stringa
 char* getPid(Node* n) {
-	char* str = (char*)calloc(1, sizeof(char*));
+	char* str = (char*)calloc(MAXLEN, sizeof(char*));
+	if(str == NULL) //Controllo eventuali errori di allocazione
+		return str;
+		
 	snprintf(str, MINLEN, "%d", n->pid);
 
 	return str;
 }
 
+//Ritorno il numero di figli come stringa
 char* getnFigli(Node* n) {
-	char* str = (char*)calloc(1, sizeof(char*));
+	char* str = (char*)calloc(MAXLEN, sizeof(char*));
+	if(str == NULL) //Controllo eventuali errori di allocazione
+		return str;
+		
 	snprintf(str, MINLEN, "%d", n->nFigli);
 
 	return str;
 }
 
+//Funzione per il get del name
 char* getName(Node* n) {
 	return n->name;
 }
 
-char* getFatherPid(Node* n) {
+//Richiedo il pid del nodo padre
+char* getFatherPid(Node* n) { //se ritorna null c'è stato un errore in fase di allocazione della memoria
 	return getPid(n->father);
 }
 
-Node* getFather(Node* n) {
+//Funzione get del nodo padre
+Node* getFather(Node* n) { 
 	return n->father;
 }
 
-char* getFatherName(Node* n) {
+//Funzione get del nome del nodo padre
+char* getFatherName(Node* n) { //se ritorna null c'è stato un errore in fase di allocazione della memoria
 	return getName(n->father);
 }
 
+//Scrivo su una stringa le informazioni del processo passato
 int pinfo(Node* n, char* str) {
+	char* tmp = (char*)calloc(MAXLEN,sizeof(char));
+	if(tmp == NULL)
+		return 9;
 
 	strcat(str,"Nome\t\t");
-	strcat(str, getName(n));
+	tmp = getName(n);
+	strcat(str, tmp);
 	strcat(str, "\n");
+
 
 	strcat(str,"Pid\t\t");
-	strcat(str, getPid(n));
+	tmp = getPid(n);
+	if(tmp == NULL)
+		return 9;
+	strcat(str, tmp);
 	strcat(str, "\n");
-
+	
 	strcat(str,"Padre\t\t");
-	strcat(str, getFatherName(n));
+	tmp = getFatherName(n);
+	if(tmp == NULL)
+		return 9;
+	strcat(str, tmp);
 	strcat(str, "\n");
 
 	strcat(str,"PPid\t\t");
-	strcat(str, getFatherPid(n));
+	tmp = getFatherPid(n);
+	if(tmp == NULL)
+		return 9;
+	strcat(str, tmp);
 	strcat(str, "\n");
 
 	strcat(str,"numero figli\t");
+	tmp = getnFigli(n);
+	if(tmp == NULL)
+		return 9;
 	strcat(str, getnFigli(n));
 	strcat(str, "\n");
 
 	strcat(str,"System pid\t");
-	char* tmp = (char*)calloc(MINLEN, sizeof(char*));
 	snprintf(tmp, MINLEN, "%d", n->systemPid);
 	strcat(str,tmp);
 
@@ -184,11 +212,15 @@ int pinfo(Node* n, char* str) {
 	return 0;
 }
 
-void plist(Node* nodo, char* ch) {
+//Scrivo su di una stringa la lista dei processi
+int plist(Node* nodo, char* ch) {
 
+	//Controllo per garantire che la stringa sia lunga a sufficenza
 	if(ch != NULL && strlen(ch) > 0)
 	{
+		//Ottengo un valore di lunghezza della stringa rispetto alla lunghezza massima attuale
 		double alpha = ((double)strlen(ch))/((double)longlen);
+		//Se il rapporto supera 0,8 raddoppio la dimensione della stringa e della lunghezza massima pre impostata
 		if(alpha > 0.8)
 		{
 			ch = (char*)realloc(ch,strlen(ch)*2*(sizeof(char)));
@@ -196,16 +228,22 @@ void plist(Node* nodo, char* ch) {
 		}
 	}
 
+	//Inserisco il nome del nodo attuale
 	strcat(ch, getName(nodo));
 	strcat(ch, "\n");
 
+	//Aggiungo il nome di tutti i miei figli
 	int i;
 	for(i = 0; i < nodo->nFigli; i++)
 		plist(nodo->figli[i], ch);
+		
+	return 0;
 }
 
+//Scrivo l'albero dei processi su di una stringa
 void ptree(Node* nodo, int tab,char* ch) {
 
+	//Come per il plist devo controllare la dimensione della stringa
 	if(ch != NULL && strlen(ch) > 0)
 	{
 		double alpha = ((double)strlen(ch))/((double)longlen);
@@ -215,8 +253,6 @@ void ptree(Node* nodo, int tab,char* ch) {
 			longlen = longlen*2;
 		}
 	}
-
-	//strcat(ch,color(tab));
 
 	if(tab == 1)
 	{
@@ -240,10 +276,9 @@ void ptree(Node* nodo, int tab,char* ch) {
 		if(nodo->figli[i]->nFigli > 0)
 			ptree(nodo->figli[i], tab+1,ch);
 	}
-
-	//strcat(ch,color(tab-1));
 }
 
+//Funzione per la ricerca utilizzando il nome partendo da un determinato nodo
 Node* cerca(Node *start,char* name) {
 	if(strcmp(start->name, name) == 0)
 		return start;
@@ -278,21 +313,26 @@ void spostaASinistra(int i, Node** v, int n) {
 	}
 }
 
+//Funzione per ottenere il pid di un processo da un messaggio che mi è appena arrivato
 int ottieniPid(char* test)
 {
 	char* testo = (char*)calloc(MAXLEN, sizeof(char));
 	char* pid = (char*)calloc(MINLEN, sizeof(char));
+	
+	if(testo == NULL || pid == NULL)
+		return -1;
 
 	testo = strtok(test, ",");
 	pid = strtok(NULL, ",");
-	//strcpy(test, testo);
 
 	return (int)strtol(pid, (char **)NULL, 10);
 }
 
-//Return -1 se il nodo esisteva già tra i figli successivi di start
+//Funzione per la creazione di un nuovo nodo
 int pnew(Node *start, char* nome, int signalChildren) { //SignalChildren 0 faccio qui il fork, altrimenti lo fa il processo
 	contPid++;
+	
+	//Controllo se il nodo esisteva già
 	if(cerca(start, nome) != NULL)
 		return 7;
 
@@ -317,16 +357,20 @@ int pnew(Node *start, char* nome, int signalChildren) { //SignalChildren 0 facci
 	if((n->nomePipeScrittura == NULL) || (n->nomePipeLettura == NULL))
 		return 8;
 
+	//Vettore d'appoggio
 	Node** vettoreFigli = (Node**)calloc(start->nFigli, sizeof(Node));
 	if(vettoreFigli == NULL)
 		return 8;
 
+	//Inserisco i nomi delle stringhe nelle rispettive variabili
 	snprintf(n->nomePipeScrittura, PIPELEN, "%s%d", "assets/Scrittura_", contPid);
 	snprintf(n->nomePipeLettura, PIPELEN, "%s%d", "assets/Lettura_", contPid);
+	
 	char* strpid = (char*)calloc(MINLEN, sizeof(char));
 	if(strpid == NULL)
 		return 8;
 
+	//Variabili di supporto
 	char* test = (char*)calloc(MAXLEN, sizeof(char));
 	if(test == NULL)
 		return 8;
@@ -336,12 +380,15 @@ int pnew(Node *start, char* nome, int signalChildren) { //SignalChildren 0 facci
 
 	snprintf(strpid, MINLEN, "%d", contPid);
 
+	//Creo le pipe
 	if(creaPipe(n) != 0)
 	{
+		//Nel caso in cui non sia riuscito a crearle chiudo eventuali resti delle pipe e ritorno l'errore 8
 		chiudiPipe(n);
 		return 8;
 	}
 
+	//In base al flag signal children so se devo creare un nuovo processo o richiedere una clonazione
 	if(signalChildren == 0)
 	{
 		int p = fork();
@@ -350,64 +397,42 @@ int pnew(Node *start, char* nome, int signalChildren) { //SignalChildren 0 facci
 		else if (p < 0)
 			return 8;
 	}
-	else if(signalChildren == 1)
+	else if(signalChildren == 1) //Clonazioen verbose
 	{
 		char* message = (char*)calloc(MAXLEN,sizeof(char));
 		if(message == NULL)
 			return 8;
 
+		//Preparo il messaggio
 		strcat(message,"CLON ");
 		strcat(message,n->name);
 		strcat(message," ");
 		strcat(message,strpid);
-		if(signalChildren == 2)
-		{
-			strcat(message," ");
-			strcat(message,"QUIET");
-		}
 		strcat(message,".");
 
+		//Invio il messaggio al figlio
 		if(writePipe(start, message) != 0)
 		{
 			printf("Problema riscontrato nelle pipe interne\n");
 			return 10;
 		}
 
+		//Attendo il messaggio di risposta
 		int k = readPipe(start,test);
 		if(k != 0)
 		{
-			//printf("Problema riscontrato nelle pipe interne\n");
+			printf("Problema riscontrato nelle pipe interne\n");
 			return 10;
 		}
-		if(strstr(test,"IMPOSSIBILE") != NULL)
+		if(strstr(test,"IMPOSSIBILE") != NULL) //Controllo il caso in cui ci siano stati problemi nella creazione del clone
 		{
 			printf("%s\n", test);
 			return 8;
 		}
+		//Stampo il messaggio che mi è stato mandato dal children
 		printf("%s\n", test);
-		/*
-		tentativi = 0;
-
-		do{
-			int k = readPipe(n,test)
-			if(k != 0 && k != -1)
-				return 10;
-
-			if(strstr(test, "terminato") != NULL)
-			{
-				printf("%s\n", test);
-				break;
-			}
-			else
-				printf("Non ho ricevuto risposta dal processo...riprovo");
-
-			tentativi++;
-		}while(tentativi < 3)
-
-		if(tentativi == 3)
-			return 10;*/
 	}
-	else
+	else //Clonazione non verbose, non stampo i messaggi ritornati
 	{
 		char* message = (char*)calloc(MAXLEN,sizeof(char));
 		if(message == NULL)
@@ -432,8 +457,8 @@ int pnew(Node *start, char* nome, int signalChildren) { //SignalChildren 0 facci
 			return 8;
 	}
 
+	//Attendo un messaggio di conferma creazioen da parte del figlio
 	int k = readPipe(n, test2);
-
 	if(k != 0)
 	{
 		printf("Problema riscontrato nelle pipe interne\n");
@@ -445,8 +470,9 @@ int pnew(Node *start, char* nome, int signalChildren) { //SignalChildren 0 facci
 		return 8;
 	}
 
+	//mi ricavo il pid di sistema che mi è stato passato, in modo che non sia visibile all'utente
 	n->systemPid = ottieniPid(test2);
-	if(signalChildren != 2)
+	if(signalChildren != 2) //In caso di verbose stampo
 		printf("%s\n", test2);
 
 	/*tentativi = 0;
@@ -816,6 +842,21 @@ int prePClose(Node* padre, char* attributo) {
 	}
 }
 
+void ottieniGerarchia(Node* nodo,char* test){
+	if(nodo->nFigli > 0)
+	{
+		strcat(test,"pspawn ");
+		strcat(test, getName(nodo));
+		strcat(test, " ");
+		strcat(test, getnFigli(nodo));
+		strcat(test,"\n");
+		
+		int i;
+		for(i = 0; i < nodo->nFigli; i++)
+			ottieniGerarchia(nodo->figli[i],test);
+	}
+}
+
 int pexport(Node* nodo)
 {
 	FILE* file  = fopen("src/log.txt",  "w+");
@@ -825,18 +866,14 @@ int pexport(Node* nodo)
 		int i;
 		for(i = 0; i < nodo->nFigli; i++)
 		{
+			char* test = (char*)calloc(LONGLEN,sizeof(char));
+			
 			fprintf(file, "%s", "pnew ");
 			fprintf(file, "%s", nodo->figli[i]->name);
 			fprintf(file, "%s", "\n");
-
-			if(nodo->figli[i]->nFigli > 0)
-			{
-				fprintf(file, "%s", "pspawn ");
-				fprintf(file, "%s", nodo->figli[i]->name);
-				fprintf(file, "%s", " ");
-				fprintf(file, "%d", nodo->figli[i]->nFigli);
-				fprintf(file, "%s", "\n");
-			}
+			
+			ottieniGerarchia(nodo->figli[i],test);
+			fprintf(file, "%s", test);
 		}
 	}
 	else
