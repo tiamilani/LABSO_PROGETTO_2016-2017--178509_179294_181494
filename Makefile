@@ -38,7 +38,8 @@ assets: build
 	@echo "Creazione file di test completata..."
 
 exist:
-	@test -f "$(TMP_FILE)" || $(MAKE) assets
+	@test -f "$(TMP_FILE)" || $(MAKE) assets --no-print-directory
 
 test: exist
+	@echo "Avvio shell passando file di test in corso...\n"
 	@./$(FILE_DIR_SAVE)$(MAIN_EXE) $(FILE_DIR_OTHER)$(FILE_TEST)

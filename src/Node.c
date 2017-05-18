@@ -587,6 +587,7 @@ int pClose(Node* start, char* name) {
 	}
 }
 
+//Funzione per chiudere tutti i processi partendo da un nodo (compreso)
 int closeAll(Node* start, int multiQuit) {
 	int ris = 0;
 	while(start->nFigli > 0)
@@ -602,11 +603,12 @@ int closeAll(Node* start, int multiQuit) {
 	return ris;
 }
 
-void killProc(int pid)
-{
+//Killa un processo
+void killProc(int pid){
 	 kill(pid, SIGTERM);
 }
 
+//Funzione per chiudere forzatamente tutti i processi partendo da un nodo
 void errorcloseAll(Node* start) {
 	int i = start->nFigli - 1;
  	while(i >= 0)
@@ -620,7 +622,8 @@ void errorcloseAll(Node* start) {
   	free(start);
   }
 
-  void errorquit(Node* start){
+//Quit dalla shell forzatamente
+void errorquit(Node* start){
  	int i = start->nFigli - 1;
  	while(i >= 0)
  	{
@@ -632,7 +635,6 @@ void errorcloseAll(Node* start) {
   }
 
 //Funzione che clona un certo processo
-//Ipoteticamente la clonazione genera un figlio
 int pspawn(Node* start, char* name, int multiSpawn) {
 	//Cerco il processo da clonare
 	Node *tmp = (Node*)calloc(1, sizeof(Node));
@@ -665,6 +667,7 @@ int pspawn(Node* start, char* name, int multiSpawn) {
 	}
 }
 
+//Funzione per clonare più volte
 int prePSpawn(Node* start, char* name, char* option){
 	int num, i;
 	num = (int)strtol(option, (char **)NULL, 10);
@@ -690,7 +693,6 @@ int prePSpawn(Node* start, char* name, char* option){
 //Funzione per chiudere tutto partendo da un nome
 int prmall(Node* start, char* name) {
 	Node *tmp = (Node*)calloc(1, sizeof(Node));
-
 	if(tmp == NULL)
 		return 9;
 
@@ -701,6 +703,7 @@ int prmall(Node* start, char* name) {
 		return closeAll(tmp, 0);
 }
 
+//Funzione per chiudere correttamente processi e shell
 int quit(Node* start) {
 	int ris = 0;
 	float j = 0;
@@ -726,7 +729,7 @@ int quit(Node* start) {
 	return ris;
 }
 
-
+//Funzione che permette di utilizzare il wildcard all'interno dei comandi
 int wildcard(char *string, char *pattern) {
 	while(*string)
 	{
@@ -780,7 +783,7 @@ int wildcard(char *string, char *pattern) {
 	return !*pattern;
 }
 
-//Funzione per chiudere un processo con <name>
+//Funzione per chiudere un processo con <name>* e riconoscere il wildcard
 int pCloseWildCard(Node* padre, Node* start, char* nomeC, char* name) {
 	int i = 0, n, ris = 0;
 	while(i < start->nFigli)
@@ -797,13 +800,13 @@ int pCloseWildCard(Node* padre, Node* start, char* nomeC, char* name) {
 	return ris;
 }
 
+//Funzione per chiudere tutti i processi con il wildcard
 int prePClose(Node* padre, char* attributo) {
 	if(strstr(attributo, "*") == NULL)
 		return pClose(padre, attributo);
 	else
 	{
 		char* nome = (char*)calloc(sizeof(attributo),sizeof(char));
-
 		if(nome == NULL)
 			return 9;
 
@@ -824,6 +827,7 @@ int prePClose(Node* padre, char* attributo) {
 	}
 }
 
+//Ottiene la gerarchia tramite pspawn
 void ottieniGerarchia(Node* nodo,char* test){
 	if(nodo->nFigli > 0)
 	{
@@ -839,16 +843,21 @@ void ottieniGerarchia(Node* nodo,char* test){
 	}
 }
 
-int pexport(Node* nodo)
-{
+//Eport della gerarchia come file
+int pexport(Node* nodo){
 	FILE* file  = fopen("src/log.txt",  "w+");
-
+	
 	if(file)
 	{
 		int i;
 		for(i = 0; i < nodo->nFigli; i++)
 		{
 			char* test = (char*)calloc(LONGLEN,sizeof(char));
+			if(test == NULL)
+			{
+				fclose(file);
+				return 9;
+			}
 			
 			fprintf(file, "%s", "pnew ");
 			fprintf(file, "%s", nodo->figli[i]->name);
@@ -868,6 +877,7 @@ int pexport(Node* nodo)
 	return 0;
 }
 
+//Funzione per inizializzare il nodo padre
 Node* init() {
 	Node *padre = (Node*)calloc(1,sizeof(Node));
 	if(padre!=NULL){

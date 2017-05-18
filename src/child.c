@@ -111,9 +111,7 @@ int main (int argc, char* argv[])
 	if(status == NULL || pipeLettura == NULL || pipeScrittura == NULL)
 	{
 		strcpy(message,"ERRORI IN FASE DI AVVIO");
-		if(writePipe(pipeLettura, message) != 0)
-			printf("ERRORE FATALE NELL'APERTURA DELLA PIPE DA PARTE DEL PROCESSO,\nCHIUSURA DEL PROCESSO IN CORSO\nUTILIZZARE IL COMDANDO errorquit PER CHIUDERE LA SHELL\n");
-
+		writePipe(pipeLettura, message);
 		return 0;
 	}
 
@@ -123,17 +121,11 @@ int main (int argc, char* argv[])
 	/* Prepare message */
 	sprintf(message, "Processo <%s> avviato,%d", argv[1],getpid());
 	if(writePipe(pipeLettura, message) != 0) /* Write message down pipe */
-	{
-		printf("ERRORE FATALE NELL'APERTURA DELLA PIPE DA PARTE DEL PROCESSO,\nCHIUSURA DEL PROCESSO IN CORSO\nUTILIZZARE IL COMDANDO errorquit PER CHIUDERE LA SHELL\n");
 		return 0;
-	}
 
 	do {
 		if(readPipe(status)!= 0)
-		{
-			printf("ERRORE FATALE NELL'APERTURA DELLA PIPE DA PARTE DEL PROCESSO,\nCHIUSURA DEL PROCESSO IN CORSO\nUTILIZZARE IL COMDANDO errorquit PER CHIUDERE LA SHELL\n");
 			return 0;
-		}
 
 
 		if(strlen(status) > 4)
@@ -141,20 +133,14 @@ int main (int argc, char* argv[])
 			{
 				strcpy(message,"IMPOSSIBILE AVVIARE IL FIGLIO");
 				if(writePipe(pipeLettura, message) != 0)
-				{
-					printf("ERRORE FATALE NELL'APERTURA DELLA PIPE DA PARTE DEL PROCESSO,\nCHIUSURA DEL PROCESSO IN CORSO\nUTILIZZARE IL COMDANDO errorquit PER CHIUDERE LA SHELL\n");
 					return 0;
-				}
 			}
 
 	} while(strcmp(status, "EXIT") != 0);
 
 	sprintf(message, "Processo <%s> terminato", argv[1]);
 	if(writePipe(pipeLettura, message) != 0)
-	{
-		printf("ERRORE FATALE NELL'APERTURA DELLA PIPE DA PARTE DEL PROCESSO,\nCHIUSURA DEL PROCESSO IN CORSO\nUTILIZZARE IL COMDANDO errorquit PER CHIUDERE LA SHELL\n");
 		return 0;
-	}
 
 	unlink(pipeLettura);
 	unlink(pipeScrittura);
