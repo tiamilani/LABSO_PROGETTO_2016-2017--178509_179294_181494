@@ -115,8 +115,8 @@ int main (int argc, char* argv[])
 		return 0;
 	}
 
-	snprintf(pipeLettura, PIPELEN, "%s%s", "assets/Lettura_", argv[1]);
-	snprintf(pipeScrittura, PIPELEN, "%s%s", "assets/Scrittura_", argv[1]);
+	snprintf(pipeLettura, PIPELEN, "%s%s", "pipe/Lettura_", argv[1]);
+	snprintf(pipeScrittura, PIPELEN, "%s%s", "pipe/Scrittura_", argv[1]);
 
 	/* Prepare message */
 	sprintf(message, "Processo <%s> avviato,%d", argv[1],getpid());

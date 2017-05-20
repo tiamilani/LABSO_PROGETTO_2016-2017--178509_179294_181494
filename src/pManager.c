@@ -5,14 +5,6 @@
 #include <fcntl.h>
 #include "Node.c"
 
-//Per aumentare la sicurezza del programma, nella libreria andrà implementata la funzione restituisci_radice
-//Che mi ritornerà la radice già creata, da lì io potrò fare solo le operazioni sulla radice
-
-/*
- * da fare:
- * progress in tutte le azioni che richiedono più di una stampa
-*/
-
 Node *padre;
 #define MAX_LENGTH 1024
 
@@ -352,9 +344,11 @@ int main(int argc, char* argv[]) {
 
 	if (errno == EEXIST)
 	{
-		printf("pManager gia' in esecuzione... terminare l'esecuzione in modo corretto!\nIn caso di necessita' terminare il processo pManager, eliminare il file src/tmp e riavviare pManager.\n");
+		printf("pManager gia' in esecuzione... \nIn caso di necessita' terminare il processo pManager, eseguire 'make tmp' e riavviare pManager.\n");
 		exit(3);
 	}
+
+	system("[ -d pipe ] || mkdir pipe");
 
 	padre = init();
 
@@ -383,7 +377,7 @@ int main(int argc, char* argv[]) {
 		menu();
 	}
 
-	system("rm -f src/tmp;");
+	system("rm -rf pipe src/tmp;");
 
 	return 0;
 }

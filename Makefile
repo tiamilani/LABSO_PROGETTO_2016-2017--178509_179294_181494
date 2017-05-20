@@ -22,24 +22,37 @@ TMP_FILE=src/tmp
 help:
 	@echo "$(TESTO)"
 
-clean:
+tmp:
+	@rm -f $(TMP_FILE)
+	@echo "File di cache rimossi!"
+
+checkClean:
 	@rm -rf $(FILE_DIR_SAVE) $(FILE_DIR_OTHER)
 	@echo "Eliminazione file completata..."
 
-build: clean
+clean:
+	@[ -f "$(TMP_FILE)" ] && echo "pManager in esecuzione... In caso di errore eseguire make tmp!" || $(MAKE) checkClean --no-print-directory
+
+checkBuild: clean
 	@mkdir $(FILE_DIR_SAVE)
 	@gcc -o $(FILE_DIR_SAVE)$(MAIN_EXE) $(FILE_DIR_FIND)$(MAIN_FILE)
 	@gcc -o $(FILE_DIR_SAVE)$(CHILD_EXE) $(FILE_DIR_FIND)$(CHILD_FILE)
 	@echo "Compilazione file completata..."
-	
-assets: build
+
+build:
+	@[ -f "$(TMP_FILE)" ] && echo "pManager in esecuzione... In caso di errore eseguire make tmp!" || $(MAKE) checkBuild --no-print-directory
+
+checkAssets: build
 	@mkdir $(FILE_DIR_OTHER)
 	@echo "$(TESTO_TEST)" > $(FILE_DIR_OTHER)$(FILE_TEST)
 	@echo "Creazione file di test completata..."
 
-exist:
-	@test -f "$(TMP_FILE)" || $(MAKE) assets --no-print-directory
+assets:
+	@[ -f "$(TMP_FILE)" ] && echo "pManager in esecuzione... In caso di errore eseguire make tmp!" || $(MAKE) checkAssets --no-print-directory
 
-test: exist
+checkTest: assets
 	@echo "Avvio shell passando file di test in corso...\n"
 	@./$(FILE_DIR_SAVE)$(MAIN_EXE) $(FILE_DIR_OTHER)$(FILE_TEST)
+
+test:
+	@[ -f "$(TMP_FILE)" ] && echo "pManager in esecuzione... In caso di errore eseguire make tmp!" || $(MAKE) checkTest --no-print-directory

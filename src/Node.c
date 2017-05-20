@@ -32,7 +32,7 @@ int readLine (int idPipeLettura,char *str) {
 	do {  //Read characters until '\0' or end-of-input
 		n = read(idPipeLettura, str, 1); //Read one character
 	} while (n > 0 && *str++ != '\0'); //Controllo che non ci siano errori
-	
+
 	//Return -1 se ci sono stati errori
 	return returnErrno();
 }
@@ -61,10 +61,10 @@ int readPipe(Node* nodo,char *str) {
 
 //Scrivo sulla pipe
 int writePipe(Node* nodo, char* str) {
-	
+
 	//Tento di aprire la pipe interessata
 	nodo->idPipeScrittura = open(nodo->nomePipeScrittura, O_WRONLY);
-	
+
 	if(returnErrno() != 0)
 	{
 		//Se ci sono stati errori lo stampo a video e ritorno
@@ -104,16 +104,16 @@ int creaPipe(Node* nodo) {
 	return returnErrno();
 }
 
-//Chiudo le pipe 
+//Chiudo le pipe
 int chiudiPipe(Node* nodo) {
 	//Chiudo i file descriptor
 	close(nodo->idPipeLettura);
 	close(nodo->idPipeScrittura);
-	
+
 	//Rimuovo le pipe
 	unlink(nodo->nomePipeLettura);
 	unlink(nodo->nomePipeScrittura);
-	
+
 	return 0;
 }
 
@@ -122,7 +122,7 @@ char* getPid(Node* n) {
 	char* str = (char*)calloc(MAXLEN, sizeof(char*));
 	if(str == NULL) //Controllo eventuali errori di allocazione
 		return str;
-		
+
 	snprintf(str, MINLEN, "%d", n->pid);
 
 	return str;
@@ -133,7 +133,7 @@ char* getnFigli(Node* n) {
 	char* str = (char*)calloc(MAXLEN, sizeof(char*));
 	if(str == NULL) //Controllo eventuali errori di allocazione
 		return str;
-		
+
 	snprintf(str, MINLEN, "%d", n->nFigli);
 
 	return str;
@@ -150,7 +150,7 @@ char* getFatherPid(Node* n) { //se ritorna null c'è stato un errore in fase di 
 }
 
 //Funzione get del nodo padre
-Node* getFather(Node* n) { 
+Node* getFather(Node* n) {
 	return n->father;
 }
 
@@ -177,7 +177,7 @@ int pinfo(Node* n, char* str) {
 		return 9;
 	strcat(str, tmp);
 	strcat(str, "\n");
-	
+
 	strcat(str,"Padre\t\t");
 	tmp = getFatherName(n);
 	if(tmp == NULL)
@@ -232,7 +232,7 @@ int plist(Node* nodo, char* ch) {
 	int i;
 	for(i = 0; i < nodo->nFigli; i++)
 		plist(nodo->figli[i], ch);
-		
+
 	return 0;
 }
 
@@ -313,7 +313,7 @@ void spostaASinistra(int i, Node** v, int n) {
 int ottieniPid(char* test) {
 	char* testo = (char*)calloc(MAXLEN, sizeof(char));
 	char* pid = (char*)calloc(MINLEN, sizeof(char));
-	
+
 	if(testo == NULL || pid == NULL)
 		return -1;
 
@@ -326,7 +326,7 @@ int ottieniPid(char* test) {
 //Funzione per la creazione di un nuovo nodo
 int pnew(Node *start, char* nome, int signalChildren) { //SignalChildren 0 faccio qui il fork, altrimenti lo fa il processo
 	contPid++;
-	
+
 	//Controllo se il nodo esisteva già
 	if(cerca(start, nome) != NULL)
 		return 7;
@@ -358,9 +358,9 @@ int pnew(Node *start, char* nome, int signalChildren) { //SignalChildren 0 facci
 		return 8;
 
 	//Inserisco i nomi delle stringhe nelle rispettive variabili
-	snprintf(n->nomePipeScrittura, PIPELEN, "%s%d", "assets/Scrittura_", contPid);
-	snprintf(n->nomePipeLettura, PIPELEN, "%s%d", "assets/Lettura_", contPid);
-	
+	snprintf(n->nomePipeScrittura, PIPELEN, "%s%d", "pipe/Scrittura_", contPid);
+	snprintf(n->nomePipeLettura, PIPELEN, "%s%d", "pipe/Lettura_", contPid);
+
 	char* strpid = (char*)calloc(MINLEN, sizeof(char));
 	if(strpid == NULL)
 		return 8;
@@ -474,7 +474,7 @@ int pnew(Node *start, char* nome, int signalChildren) { //SignalChildren 0 facci
 	}
 	if(signalChildren != 2) //In caso di verbose stampo
 		printf("%s\n", test2);
- 
+
 	//Riduco di una dimensione la memoria allocata al vettore dei figli
 	copiaVettore(vettoreFigli, start->figli, start->nFigli);
 	//free(start->figli);
@@ -571,7 +571,7 @@ int pClose(Node* start, char* name) {
 	Node *tmp = (Node*)calloc(1, sizeof(Node));
 	if(tmp == NULL)
 		return 9;
-		
+
 	tmp = cerca(start, name);
 
 	if(tmp == NULL)
@@ -836,7 +836,7 @@ void ottieniGerarchia(Node* nodo,char* test){
 		strcat(test, " ");
 		strcat(test, getnFigli(nodo));
 		strcat(test,"\n");
-		
+
 		int i;
 		for(i = 0; i < nodo->nFigli; i++)
 			ottieniGerarchia(nodo->figli[i],test);
@@ -845,8 +845,8 @@ void ottieniGerarchia(Node* nodo,char* test){
 
 //Eport della gerarchia come file
 int pexport(Node* nodo){
-	FILE* file  = fopen("src/log.txt",  "w+");
-	
+	FILE* file  = fopen("src/log.txt", "w+");
+
 	if(file)
 	{
 		int i;
@@ -858,11 +858,11 @@ int pexport(Node* nodo){
 				fclose(file);
 				return 9;
 			}
-			
+
 			fprintf(file, "%s", "pnew ");
 			fprintf(file, "%s", nodo->figli[i]->name);
 			fprintf(file, "%s", "\n");
-			
+
 			ottieniGerarchia(nodo->figli[i],test);
 			fprintf(file, "%s", test);
 		}
