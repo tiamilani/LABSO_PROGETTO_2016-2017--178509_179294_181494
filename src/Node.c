@@ -225,13 +225,26 @@ int plist(Node* nodo, char* ch) {
 	}
 
 	//Inserisco il nome del nodo attuale
-	strcat(ch, getName(nodo));
+	if(nodo->morto == 0)
+		strcat(ch, getName(nodo));
+	else
+	{
+		strcat(ch,ANSI_COLOR_RED);
+		strcat(ch, getName(nodo));
+		strcat(ch, " (chiuso)");
+		strcat(ch,ANSI_COLOR_RESET);
+	}
 	strcat(ch, "\n");
 
 	//Aggiungo il nome di tutti i miei figli
 	int i;
 	for(i = 0; i < nodo->nFigli; i++)
 		plist(nodo->figli[i], ch);
+	
+	for(i = 0; i < nodo->nFigliMorti; i++)
+	{
+		plist(nodo->figliMorti[i], ch);
+	}
 
 	return 0;
 }
@@ -271,6 +284,30 @@ void ptree(Node* nodo, int tab,char* ch) {
 
 		if(nodo->figli[i]->nFigli > 0)
 			ptree(nodo->figli[i], tab+1,ch);
+	}
+	
+	for(i = 0; i < nodo->nFigliMorti; i++)
+	{
+		int j;
+		for(j = 1; j < tab; j++)
+			strcat(ch, "|   ");
+
+		strcat(ch, ANSI_COLOR_RED);
+		strcat(ch, "|");
+		strcat(ch, "-");
+		strcat(ch, "> ");
+
+		strcat(ch, nodo->figliMorti[i]->name);
+		strcat(ch, " (chiuso)");
+		strcat(ch, "\n");
+		
+		strcat(ch, ANSI_COLOR_RESET);
+		
+		if(nodo->figliMorti[i]->nFigliMorti > 0)
+		{
+			ptree(nodo->figliMorti[i], tab+1, ch);
+		}
+		
 	}
 }
 
@@ -494,6 +531,28 @@ int pnew(Node *start, char* nome, int signalChildren) { //SignalChildren 0 facci
 	return 0;
 }
 
+//Funzione per spostare il puntatore di un figlio alla sezione dei processi morti
+int spostaSulVettoreDeiMorti(int i,Node* nodo) {
+	//Vettore d'appoggio
+	Node** vettoreFigli = (Node**)calloc(nodo->nFigliMorti, sizeof(Node));
+	if(vettoreFigli == NULL)
+		return 10;
+	
+	copiaVettore(vettoreFigli,nodo->figliMorti,nodo->nFigliMorti);
+	
+	nodo->nFigliMorti++;
+	
+	nodo->figliMorti = (Node**)calloc(nodo->nFigliMorti, sizeof(Node));
+	if(nodo->figliMorti == NULL)
+		return 10;
+		
+	copiaVettore(nodo->figliMorti,vettoreFigli,nodo->nFigliMorti - 1);
+	
+	nodo->figliMorti[nodo->nFigliMorti - 1] = nodo->figli[i];
+	
+	return 0;
+}
+
 //Funzione che permette di chiudere un figlio attraverso il padre
 int fatherCloseMe(Node* father, char *childName, int flag, int multiQuit) {
 	//Trovo il processo tra i miei figli per avere l'indice i esimo
@@ -537,6 +596,12 @@ int fatherCloseMe(Node* father, char *childName, int flag, int multiQuit) {
 		if(multiQuit != 1)
 			printf("%s\n", test);
 	}
+	
+	tmp->morto = 1;
+	
+	if(spostaSulVettoreDeiMorti(i,father) != 0)
+		return 10;
+	
 	//Sposto di una posizione tutti i figli che stanno alla destra del figlio che ho eliminato
 	spostaASinistra(i, father->figli, father->nFigli);
 	//Riduco di una dimensione la memoria allocata al vettore dei figli
@@ -553,6 +618,7 @@ int fatherCloseMe(Node* father, char *childName, int flag, int multiQuit) {
 
 	return 0;
 }
+
 
 //closeMe() controllo se ho figli, se non ne ho mi chiudo, altrimenti errore
 int closeMe(Node* nodo, int multiQuit) {
@@ -579,9 +645,6 @@ int pClose(Node* start, char* name) {
 	else
 	{
 		int ris = closeMe(tmp, 0);
-		//Dealloco la mia memoria
-		if(ris == 0)
-			free(tmp);
 
 		return ris;
 	}
@@ -597,8 +660,6 @@ int closeAll(Node* start, int multiQuit) {
 		return ris;
 
 	ris = closeMe(start, multiQuit);
-	if(ris == 0)
-		free(start);
 
 	return ris;
 }
@@ -784,20 +845,26 @@ int wildcard(char *string, char *pattern) {
 }
 
 //Funzione per chiudere un processo con <name>* e riconoscere il wildcard
-int pCloseWildCard(Node* padre, Node* start, char* nomeC, char* name) {
+int pCloseWildCard(Node* padre, char* nome) {
 	int i = 0, n, ris = 0;
-	while(i < start->nFigli)
+	while(i < padre->nFigli)
 	{
-		n = start->nFigli;
-		pCloseWildCard(padre, start->figli[i], nomeC, name);
-		if (n == start->nFigli)
+		n = padre->nFigli;
+
+		if(wildcard(padre->figli[i]->name,nome) == 1)
+			ris = prmall(padre,padre->figli[i]->name);
+		else
+			ris = pCloseWildCard(padre->figli[i], nome);
+
+		if(ris != 0)
+			return ris;
+
+		
+		if (n == padre->nFigli)
 			i++;
 	}
 
-	if(wildcard(start->name, nomeC) == 1)
-	 	ris = prmall(padre, start->name);
-
-	return ris;
+	return 0;
 }
 
 //Funzione per chiudere tutti i processi con il wildcard
@@ -823,7 +890,7 @@ int prePClose(Node* padre, char* attributo) {
 				i++;
 		}
 
-		return pCloseWildCard(padre, padre, attributo, nome);
+		return pCloseWildCard(padre, nome);
 	}
 }
 
