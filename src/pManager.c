@@ -26,8 +26,7 @@ Node *padre;
 
 void file(char*);
 
-void gestisciErrori(int error)
-{
+void gestisciErrori(int error) {
 	/*
 		0 -> Tutto OK
 		1 -> Nodo non trovato
@@ -293,8 +292,7 @@ int psystem(char *line) {
 	return 0;
 }
 
-void menu()
-{
+void menu() {
 	char *line = (char*)calloc(MAXLEN, sizeof(char));
 
 	int i = 0;
@@ -313,8 +311,7 @@ void menu()
 	}
 }
 
-void file(char* nomeFile)
-{
+void file(char* nomeFile) {
 	FILE *fd;
 	char *res = (char*)calloc(MAX_LENGTH,sizeof(char));
 	if(res == NULL)
@@ -350,8 +347,7 @@ void file(char* nomeFile)
 		perror("Error: ");
 }
 
-int main(int argc, char* argv[])
-{
+int main(int argc, char* argv[]) {
 	int fd = open("src/tmp", O_CREAT | O_WRONLY | O_EXCL, S_IRUSR | S_IWUSR);
 
 	if (errno == EEXIST)
