@@ -78,6 +78,8 @@ void gestisciErrori(int error) {
 		case 11:
 			printf(ANSI_COLOR_GREEN "Argomento non valido\n" ANSI_COLOR_RESET);
 			break;
+		case 12:
+			printf(ANSI_COLOR_CYAN "Il nodo cercato risulta essere morto\n" ANSI_COLOR_RESET);
 	}
 }
 

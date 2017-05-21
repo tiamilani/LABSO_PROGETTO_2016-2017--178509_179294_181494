@@ -9,6 +9,8 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/select.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 
 //Return -1 se errno è stato modificato, altrimenti 0
 int returnErrno() {
@@ -165,45 +167,71 @@ int pinfo(Node* n, char* str) {
 	if(tmp == NULL)
 		return 9;
 
-	strcat(str,"Nome\t\t");
+	strcat(str,"Nome\t\t\t");
 	tmp = getName(n);
 	strcat(str, tmp);
 	strcat(str, "\n");
 
 
-	strcat(str,"Pid\t\t");
+	strcat(str,"Pid\t\t\t");
 	tmp = getPid(n);
 	if(tmp == NULL)
 		return 9;
 	strcat(str, tmp);
 	strcat(str, "\n");
 
-	strcat(str,"Padre\t\t");
+	strcat(str,"Padre\t\t\t");
 	tmp = getFatherName(n);
 	if(tmp == NULL)
 		return 9;
 	strcat(str, tmp);
 	strcat(str, "\n");
 
-	strcat(str,"PPid\t\t");
+	strcat(str,"PPid\t\t\t");
 	tmp = getFatherPid(n);
 	if(tmp == NULL)
 		return 9;
 	strcat(str, tmp);
 	strcat(str, "\n");
 
-	strcat(str,"numero figli\t");
+	strcat(str,"numero figli\t\t");
 	tmp = getnFigli(n);
 	if(tmp == NULL)
 		return 9;
 	strcat(str, getnFigli(n));
 	strcat(str, "\n");
 
-	strcat(str,"System pid\t");
+	strcat(str,"numero figli morti\t");
+	snprintf(tmp, MINLEN, "%d", n->nFigliMorti);
+	strcat(str, tmp);
+	strcat(str, "\n");
+
+	strcat(str,"System pid\t\t");
 	snprintf(tmp, MINLEN, "%d", n->systemPid);
 	strcat(str,tmp);
 
 	strcat(str, "\n");
+
+	strcat(str,"Stato:\t\t\t");
+	if(n->morto == 1)
+	{
+		strcat(str,ANSI_COLOR_RED);
+		strcat(str,"Cancellato\n");
+		strcat(str,ANSI_COLOR_RESET);
+	}
+	else
+	{
+		strcat(str,ANSI_COLOR_GREEN);
+		strcat(str,"Attivo\n");
+		strcat(str,ANSI_COLOR_RESET);
+	}
+
+	/*struct rusage * r;
+	getrusage(n->systemPid,r);
+	strcat(str,"tempo attivo:\t\t");
+	snprintf(tmp,MAXLEN, "%ld.%06ld\n", r->ru_stime.tv_sec, r->ru_stime.tv_usec);
+	strcat(str,tmp);
+	strcat(str,"\n");*/
 
 	return 0;
 }
@@ -282,12 +310,13 @@ void ptree(Node* nodo, int tab,char* ch) {
 		strcat(ch, nodo->figli[i]->name);
 		strcat(ch, "\n");
 
-		if(nodo->figli[i]->nFigli > 0)
+		if(nodo->figli[i]->nFigli > 0 || nodo->figli[i]->nFigliMorti > 0)
 			ptree(nodo->figli[i], tab+1,ch);
 	}
 	
 	for(i = 0; i < nodo->nFigliMorti; i++)
 	{
+		printf("Sono %s, ho %d figli morti\n",nodo->name,nodo->nFigliMorti);
 		int j;
 		for(j = 1; j < tab; j++)
 			strcat(ch, "|   ");
@@ -321,6 +350,12 @@ Node* cerca(Node *start,char* name) {
 		for(i = 0; i < start->nFigli; i++)
 		{
 			Node* tmp = cerca(start->figli[i], name);
+			if(tmp != NULL)
+				return tmp;
+		}
+		for(i = 0; i < start->nFigliMorti; i++)
+		{
+			Node* tmp = cerca(start->figliMorti[i], name);
 			if(tmp != NULL)
 				return tmp;
 		}
@@ -365,7 +400,8 @@ int pnew(Node *start, char* nome, int signalChildren) { //SignalChildren 0 facci
 	contPid++;
 
 	//Controllo se il nodo esisteva già
-	if(cerca(start, nome) != NULL)
+	Node* ricerca = cerca(start, nome);
+	if(ricerca != NULL && ricerca->morto == 0)
 		return 7;
 
 	//Inserisco i dati nella struttura dati
@@ -642,6 +678,10 @@ int pClose(Node* start, char* name) {
 
 	if(tmp == NULL)
 		return 1; //Errore, nodo non trovato
+
+	if(tmp->morto == 1)
+		return 12;
+		
 	else
 	{
 		int ris = closeMe(tmp, 0);
@@ -706,6 +746,8 @@ int pspawn(Node* start, char* name, int multiSpawn) {
 
 	if(tmp == NULL)
 		return 1; //Errore, nodo non trovato
+	else if (tmp->morto == 1)
+		return 12;
 	else
 	{
 		tmp->numCloni++;
@@ -760,6 +802,8 @@ int prmall(Node* start, char* name) {
 	tmp = cerca(start, name);
 	if(tmp == NULL)
 		return 1; //Errore, nodo non trovato
+	if(tmp->morto == 1)
+		return 12;
 	else
 		return closeAll(tmp, 0);
 }
