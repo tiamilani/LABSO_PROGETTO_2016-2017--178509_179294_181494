@@ -19,6 +19,8 @@ FILE_TEST=input.txt
 TESTO_TEST=pnew andreamattiafederico01\npnew andreamattiafederico02\npnew andreamattiafederico03\npspawn andreamattiafederico03 6\npspawn andreamattiafederico03_3 6\npspawn andreamattiafederico03_3_3 4\npspawn andreamattiafederico03_3_3_2 4\npspawn andreamattiafederico03_3_3_2 4\npspawn andreamattiafederico03_3_3_2_2 2\npspawn andreamattiafederico03_3_3_2_2_1 2\npspawn andreamattiafederico03_3_3_2_2_1_1\npnew andreamattiafederico04\npnew andreamattiafederico05\npnew andreamattiafederico06\npspawn andreamattiafederico06 6\npspawn andreamattiafederico06_3 6\npspawn andreamattiafederico06_3_3 4\npspawn andreamattiafederico06_3_3_2 4\npspawn andreamattiafederico06_3_3_2_2 4\npspawn andreamattiafederico06_3_3_2_2_2 2\npspawn andreamattiafederico06_3_3_2_2_2_1 2\npspawn andreamattiafederico06_3_3_2_2_2_1_1\npnew andreamattiafederico07\npnew andreamattiafederico08\npnew andreamattiafederico09
 TMP_FILE=src/tmp
 
+.PHONY: clean build assets test
+
 help:
 	@echo "$(TESTO)"
 
@@ -26,12 +28,21 @@ tmp:
 	@rm -f $(TMP_FILE)
 	@echo "File di cache rimossi!"
 
+clean:
+	@[ -f "$(TMP_FILE)" ] && echo "pManager in esecuzione... In caso di errore eseguire make tmp!" || $(MAKE) checkClean --no-print-directory
+
+build:
+	@[ -f "$(TMP_FILE)" ] && echo "pManager in esecuzione... In caso di errore eseguire make tmp!" || $(MAKE) checkBuild --no-print-directory
+
+assets:
+	@[ -f "$(TMP_FILE)" ] && echo "pManager in esecuzione... In caso di errore eseguire make tmp!" || $(MAKE) checkAssets --no-print-directory
+
+test:
+	@[ -f "$(TMP_FILE)" ] && echo "pManager in esecuzione... In caso di errore eseguire make tmp!" || $(MAKE) checkTest --no-print-directory
+
 checkClean:
 	@rm -rf $(FILE_DIR_SAVE) $(FILE_DIR_OTHER)
 	@echo "Eliminazione file completata..."
-
-clean:
-	@[ -f "$(TMP_FILE)" ] && echo "pManager in esecuzione... In caso di errore eseguire make tmp!" || $(MAKE) checkClean --no-print-directory
 
 checkBuild: clean
 	@mkdir $(FILE_DIR_SAVE)
@@ -39,20 +50,12 @@ checkBuild: clean
 	@gcc -o $(FILE_DIR_SAVE)$(CHILD_EXE) $(FILE_DIR_FIND)$(CHILD_FILE)
 	@echo "Compilazione file completata..."
 
-build:
-	@[ -f "$(TMP_FILE)" ] && echo "pManager in esecuzione... In caso di errore eseguire make tmp!" || $(MAKE) checkBuild --no-print-directory
-
 checkAssets: build
 	@mkdir $(FILE_DIR_OTHER)
 	@echo "$(TESTO_TEST)" > $(FILE_DIR_OTHER)$(FILE_TEST)
 	@echo "Creazione file di test completata..."
 
-assets:
-	@[ -f "$(TMP_FILE)" ] && echo "pManager in esecuzione... In caso di errore eseguire make tmp!" || $(MAKE) checkAssets --no-print-directory
-
 checkTest: assets
 	@echo "Avvio shell passando file di test in corso...\n"
+	@sleep 2
 	@./$(FILE_DIR_SAVE)$(MAIN_EXE) $(FILE_DIR_OTHER)$(FILE_TEST)
-
-test:
-	@[ -f "$(TMP_FILE)" ] && echo "pManager in esecuzione... In caso di errore eseguire make tmp!" || $(MAKE) checkTest --no-print-directory
