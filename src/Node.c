@@ -316,7 +316,6 @@ void ptree(Node* nodo, int tab,char* ch) {
 	
 	for(i = 0; i < nodo->nFigliMorti; i++)
 	{
-		printf("Sono %s, ho %d figli morti\n",nodo->name,nodo->nFigliMorti);
 		int j;
 		for(j = 1; j < tab; j++)
 			strcat(ch, "|   ");
@@ -841,6 +840,7 @@ int wildcard(char *string, char *pattern) {
 		switch(*pattern)
 		{
 			case '*':
+				
 				do {
 					++pattern;
 				} while(*pattern == '*');
@@ -850,14 +850,18 @@ int wildcard(char *string, char *pattern) {
 
 				while(*string != '\0')
 				{
+					
 					if(*pattern != *string)
 						string++;
 					else
-						break;
+					{
+						if(wildcard(string++,pattern++) == 1)
+							return 1;
+						else
+							string++;
+					}
 				}
-					if(wildcard(string++,pattern++)== 1 )
-						return 1;
-
+				
 				return 0;
 
 			default :
@@ -873,7 +877,9 @@ int wildcard(char *string, char *pattern) {
 					pattern++;
 					string++;
 				}
-
+				if(*string!='\0')
+					return 0;
+					
 				return 1;
 				break;
 		}
@@ -915,11 +921,13 @@ int pCloseWildCard(Node* padre, char* nome) {
 int prePClose(Node* padre, char* attributo) {
 	if(strstr(attributo, "*") == NULL)
 		return pClose(padre, attributo);
+	
+	if(attributo[0] != '*' && attributo[strlen(attributo) - 1] != '*')
+		return 5;
+	
 	else
 	{
-		char* nome = (char*)calloc(sizeof(attributo),sizeof(char));
-		if(nome == NULL)
-			return 9;
+		char nome[strlen(attributo) + 2];
 
 		int i = 0, j = 0;
 		while(i < strlen(attributo))
@@ -933,8 +941,11 @@ int prePClose(Node* padre, char* attributo) {
 			else
 				i++;
 		}
+		
+		nome[j] = '\0';
 
-		return pCloseWildCard(padre, nome);
+		int r = pCloseWildCard(padre,attributo);
+		return r;
 	}
 }
 
