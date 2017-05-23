@@ -804,8 +804,57 @@ void errorquit(Node* start){
   }
 
 //Funzione che clona un certo processo
-int pspawn(Node* start, char* name, int multiSpawn) {
-	//Cerco il processo da clonare
+int pspawn(Node* start, char* name, int multiSpawn, Node* chose) {
+	if(multiSpawn == 0)
+	{
+		//Cerco il processo da clonare
+		Node** tmp = (Node**)calloc(0, sizeof(Node));
+		if(tmp == NULL)
+			return 9;
+
+		int index = 0;
+		Node* tmp2 = (Node*)calloc(1, sizeof(Node));
+		if(tmp2 == NULL)
+			return 9;
+
+		tmp2 = scegli(find(start, name, &tmp, &index), index);
+		chose = tmp2;
+	}
+
+	if(chose == NULL)
+		return 1;
+	else if (chose->morto == 1)
+		return 12;
+	else
+	{
+		chose->numCloni++;
+
+		char* childrenName = (char*)calloc(strlen(name) + 5, sizeof(char));
+		if(childrenName == NULL)
+			return 9;
+
+		childrenName = strcat(childrenName, name);
+
+		if(chose->nFigli > 0)
+			snprintf(childrenName, strlen(childrenName) + 6, "%s%s%d", chose->name, "_", chose->numCloni);
+		else
+			childrenName = strcat(childrenName,"_1");
+
+		if(multiSpawn == 0)
+			return pnew(chose, childrenName, 1);
+		else
+			return pnew(chose, childrenName, 2);
+	}
+}
+
+//Funzione per clonare più volte
+int prePSpawn(Node* start, char* name, char* option) {
+	int num, i;
+	num = (int)strtol(option, (char **)NULL, 10);
+
+	if(num < 0)
+		return 11;
+
 	Node** tmp = (Node**)calloc(0, sizeof(Node));
 	if(tmp == NULL)
 		return 9;
@@ -816,46 +865,13 @@ int pspawn(Node* start, char* name, int multiSpawn) {
 		return 9;
 
 	tmp2 = scegli(find(start, name, &tmp, &index), index);
-	if(tmp2 == NULL)
-		return 1;
-	else if (tmp2->morto == 1)
-		return 12;
-	else
-	{
-		tmp2->numCloni++;
-
-		char* childrenName = (char*)calloc(strlen(name) + 5, sizeof(char));
-		if(childrenName == NULL)
-			return 9;
-
-		childrenName = strcat(childrenName, name);
-
-		if(tmp2->nFigli > 0)
-			snprintf(childrenName, strlen(childrenName) + 6, "%s%s%d", tmp2->name, "_", tmp2->numCloni);
-		else
-			childrenName = strcat(childrenName,"_1");
-
-		if(multiSpawn == 0)
-			return pnew(tmp2, childrenName, 1);
-		else
-			return pnew(tmp2, childrenName, 2);
-	}
-}
-
-//Funzione per clonare più volte
-int prePSpawn(Node* start, char* name, char* option){
-	int num, i;
-	num = (int)strtol(option, (char **)NULL, 10);
-
-	if(num < 0)
-		return 11;
 
 	int ris = 0;
 	for(i = 0; i < num; i++)
 	{
 		fflush(stdout);
 		printf("\rCloning... %d/%d", i, num);
-		ris = pspawn(start, name, 1);
+		ris = pspawn(start, name, 1, tmp2);
 		if(ris != 0)
 			return ris;
 	}

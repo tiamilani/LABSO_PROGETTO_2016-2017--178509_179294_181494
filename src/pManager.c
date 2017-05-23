@@ -217,7 +217,7 @@ int psystem(char *line) {
 					}
 					else
 					{
-						int ris = pspawn(padre, attributo, 0);
+						int ris = pspawn(padre, attributo, 0, NULL);
 						if(ris != 0)
 							gestisciErrori(ris);
 					}
