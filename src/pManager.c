@@ -99,7 +99,9 @@ int psystem(char *line) {
 		if(attributo == NULL)
 		{
 			if(strcmp(comando, "phelp") == 0)
+			{
 				printf("%s\n", phelp());
+			}
 			else if(strcmp(comando, "plist") == 0)
 			{
 				char* ch = calloc(LONGLEN,1);
@@ -171,16 +173,19 @@ int psystem(char *line) {
 			}
 			else if(strcmp(comando, "pinfo") == 0)
 			{
-				Node* tmp = (Node*)calloc(1, sizeof(Node));
+				Node** tmp = (Node**)calloc(0, sizeof(Node));
 				if(tmp != NULL)
 				{
-					tmp = cerca(padre, attributo);
-					if(tmp != NULL)
+					int index = 0;
+					Node* tmp2 = (Node*)calloc(1, sizeof(Node));
+					tmp2 = scegli(find(padre, attributo, &tmp, &index), index);
+
+					if(tmp2 != NULL)
 					{
 						char* ch = calloc(LONGLEN,1);
 						if(ch != NULL)
 						{
-							pinfo(tmp,ch);
+							pinfo(tmp2, ch);
 							printf("%s\n", ch);
 						}
 						else
@@ -224,20 +229,23 @@ int psystem(char *line) {
 			}
 			else if(strcmp(comando, "prmall") == 0)
 			{
-				prmall(padre, attributo);
+				prmall(padre, attributo, 0);
 			}
 			else if(strcmp(comando, "ptree") == 0)
 			{
-				Node* tmp = (Node*)calloc(1, sizeof(Node));
+				Node** tmp = (Node**)calloc(0, sizeof(Node));
 				if(tmp != NULL)
 				{
-					tmp = cerca(padre, attributo);
-					if(tmp != NULL)
+					int index = 0;
+					Node* tmp2 = (Node*)calloc(1, sizeof(Node));
+					tmp2 = scegli(find(padre, attributo, &tmp, &index), index);
+
+					if(tmp2 != NULL)
 					{
 						char* ch = calloc(LONGLEN,1);
 						if(ch != NULL)
 						{
-							ptree(tmp, 1, ch);
+							ptree(tmp2, 1, ch);
 							printf("%s\n", ch);
 						}
 						else
@@ -251,16 +259,19 @@ int psystem(char *line) {
 			}
 			else if(strcmp(comando, "plist") == 0)
 			{
-				Node* tmp = (Node*)calloc(1, sizeof(Node));
+				Node** tmp = (Node**)calloc(0, sizeof(Node));
 				if(tmp != NULL)
 				{
-					tmp = cerca(padre, attributo);
-					if(tmp != NULL)
+					int index = 0;
+					Node* tmp2 = (Node*)calloc(1, sizeof(Node));
+					tmp2 = scegli(find(padre, attributo, &tmp, &index), index);
+
+					if(tmp2 != NULL)
 					{
 						char* ch = calloc(LONGLEN,1);
 						if(ch != NULL)
 						{
-							plist(tmp, ch);
+							plist(tmp2, ch);
 							printf("%s\n", ch);
 						}
 						else
@@ -326,7 +337,7 @@ void file(char* nomeFile) {
 	int i = 0;
 	while(i == 0)
 	{
-		if(fgets(res, 200, fd) == NULL)
+		if(fgets(res, MAX_LENGTH, fd) == NULL)
 		{
 			if(errno != 0)
 				perror("File");

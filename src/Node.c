@@ -216,7 +216,7 @@ int pinfo(Node* n, char* str) {
 	if(n->morto == 1)
 	{
 		strcat(str,ANSI_COLOR_RED);
-		strcat(str,"Cancellato\n");
+		strcat(str,"Terminato\n");
 		strcat(str,ANSI_COLOR_RESET);
 	}
 	else
@@ -259,7 +259,7 @@ int plist(Node* nodo, char* ch) {
 	{
 		strcat(ch,ANSI_COLOR_RED);
 		strcat(ch, getName(nodo));
-		strcat(ch, " (chiuso)");
+		strcat(ch, " (terminato)");
 		strcat(ch,ANSI_COLOR_RESET);
 	}
 	strcat(ch, "\n");
@@ -268,7 +268,7 @@ int plist(Node* nodo, char* ch) {
 	int i;
 	for(i = 0; i < nodo->nFigli; i++)
 		plist(nodo->figli[i], ch);
-	
+
 	for(i = 0; i < nodo->nFigliMorti; i++)
 	{
 		plist(nodo->figliMorti[i], ch);
@@ -313,7 +313,7 @@ void ptree(Node* nodo, int tab,char* ch) {
 		if(nodo->figli[i]->nFigli > 0 || nodo->figli[i]->nFigliMorti > 0)
 			ptree(nodo->figli[i], tab+1,ch);
 	}
-	
+
 	for(i = 0; i < nodo->nFigliMorti; i++)
 	{
 		int j;
@@ -326,21 +326,21 @@ void ptree(Node* nodo, int tab,char* ch) {
 		strcat(ch, "> ");
 
 		strcat(ch, nodo->figliMorti[i]->name);
-		strcat(ch, " (chiuso)");
+		strcat(ch, " (terminato)");
 		strcat(ch, "\n");
-		
+
 		strcat(ch, ANSI_COLOR_RESET);
-		
+
 		if(nodo->figliMorti[i]->nFigliMorti > 0)
 		{
 			ptree(nodo->figliMorti[i], tab+1, ch);
 		}
-		
+
 	}
 }
 
 //Funzione per la ricerca utilizzando il nome partendo da un determinato nodo
-Node* cerca(Node *start,char* name) {
+Node* cerca(Node *start, char* name) {
 	if(strcmp(start->name, name) == 0)
 		return start;
 	else
@@ -368,6 +368,77 @@ void copiaVettore(Node** v1, Node** v2, int n) {
 	int i;
 	for(i = 0; i < n; i++)
 		v1[i] = v2[i];
+}
+void copiaVettore2(int* v1, int* v2, int n) {
+	int i;
+	for(i = 0; i < n; i++)
+		v1[i] = v2[i];
+}
+
+Node** find(Node* start, char* name, Node*** ret, int* index) {
+	if(strcmp(start->name, name) == 0)
+	{
+		Node** tmp = (Node**)calloc((*index), sizeof(Node));
+		copiaVettore(tmp, (*ret), (*index));
+
+		(*index)++;
+		(*ret) = (Node**)calloc((*index), sizeof(Node));
+		(*index)--;
+
+		copiaVettore((*ret), tmp, (*index));
+		(*ret)[(*index)] = start;
+
+		(*index)++;
+	}
+	else
+	{
+		int i = 0;
+		for(i = 0; i < start->nFigli; i++)
+			find(start->figli[i], name, ret, index);
+
+		for(i = 0; i < start->nFigliMorti; i++)
+			find(start->figliMorti[i], name, ret, index);
+	}
+
+	return (*ret);
+}
+
+Node* scegli(Node** list, int length) {
+	if(length == 0)
+		return NULL;
+
+	if(length == 1)
+		return list[0];
+
+	int i = 0;
+
+	printf("Scegli il pid del processo che vuoi selezionare: \n");
+	for(i = 0; i < length; i++)
+	{
+		if(list[i]->morto == 0)
+			printf(ANSI_COLOR_GREEN "(Attivo)" ANSI_COLOR_RESET " Nome: %s\t\tPid: %s\n", list[i]->name, getPid(list[i]));
+		else
+			printf(ANSI_COLOR_RED "(Terminato)" ANSI_COLOR_RESET " Nome: %s\t\tPid: %s\n", list[i]->name, getPid(list[i]));
+	}
+
+
+	char *line = (char*)calloc(MAXLEN, sizeof(char));
+
+	while(1)
+	{
+		printf("PID > ");
+		fgets(line, MAXLEN, stdin);
+
+		char *pos;
+		if((pos = strchr(line, '\n')) != NULL)
+			*pos = '\0';
+
+		for(i = 0; i < length; i++)
+			if(strcmp(line, getPid(list[i])) == 0)
+				return list[i];
+
+		printf("PID non riconosciuto, riprova!\n");
+	}
 }
 
 //Funzione per spostare a sinistra da i+1 fino ad n
@@ -397,11 +468,6 @@ int ottieniPid(char* test) {
 //Funzione per la creazione di un nuovo nodo
 int pnew(Node *start, char* nome, int signalChildren) { //SignalChildren 0 faccio qui il fork, altrimenti lo fa il processo
 	contPid++;
-
-	//Controllo se il nodo esisteva già
-	Node* ricerca = cerca(start, nome);
-	if(ricerca != NULL && ricerca->morto == 0)
-		return 7;
 
 	//Inserisco i dati nella struttura dati
 	Node *n = (Node*)calloc(1, sizeof(Node));
@@ -572,24 +638,24 @@ int spostaSulVettoreDeiMorti(int i,Node* nodo) {
 	Node** vettoreFigli = (Node**)calloc(nodo->nFigliMorti, sizeof(Node));
 	if(vettoreFigli == NULL)
 		return 10;
-	
+
 	copiaVettore(vettoreFigli,nodo->figliMorti,nodo->nFigliMorti);
-	
+
 	nodo->nFigliMorti++;
-	
+
 	nodo->figliMorti = (Node**)calloc(nodo->nFigliMorti, sizeof(Node));
 	if(nodo->figliMorti == NULL)
 		return 10;
-		
+
 	copiaVettore(nodo->figliMorti,vettoreFigli,nodo->nFigliMorti - 1);
-	
+
 	nodo->figliMorti[nodo->nFigliMorti - 1] = nodo->figli[i];
-	
+
 	return 0;
 }
 
 //Funzione che permette di chiudere un figlio attraverso il padre
-int fatherCloseMe(Node* father, char *childName, int flag, int multiQuit) {
+int fatherCloseMe(Node* father, char* pid, int flag, int multiQuit) {
 	//Trovo il processo tra i miei figli per avere l'indice i esimo
 	int i = 0;
 	Node *tmp = (Node*)calloc(1, sizeof(Node));
@@ -608,7 +674,7 @@ int fatherCloseMe(Node* father, char *childName, int flag, int multiQuit) {
 	for(i = 0; i < father->nFigli; i++)
 	{
 		tmp = father->figli[i];
-		if(strcmp(tmp->name, childName) == 0)
+		if(strcmp(getPid(tmp), pid) == 0)
 			break;
 	}
 
@@ -631,12 +697,12 @@ int fatherCloseMe(Node* father, char *childName, int flag, int multiQuit) {
 		if(multiQuit != 1)
 			printf("%s\n", test);
 	}
-	
+
 	tmp->morto = 1;
-	
+
 	if(spostaSulVettoreDeiMorti(i,father) != 0)
 		return 10;
-	
+
 	//Sposto di una posizione tutti i figli che stanno alla destra del figlio che ho eliminato
 	spostaASinistra(i, father->figli, father->nFigli);
 	//Riduco di una dimensione la memoria allocata al vettore dei figli
@@ -663,27 +729,30 @@ int closeMe(Node* nodo, int multiQuit) {
 		return 6;
 
 	//chiedo a mio padre di inviarmi il segnale di chiusura al processo
-	return fatherCloseMe(nodo->father, nodo->name, 0, multiQuit);
+	return fatherCloseMe(nodo->father, getPid(nodo), 0, multiQuit);
 }
 
 //Funzione per chiudere un processo con <name>
 int pClose(Node* start, char* name) {
-
-	Node *tmp = (Node*)calloc(1, sizeof(Node));
+	Node** tmp = (Node**)calloc(0, sizeof(Node));
 	if(tmp == NULL)
 		return 9;
 
-	tmp = cerca(start, name);
+	int index = 0;
+	Node* tmp2 = (Node*)calloc(1, sizeof(Node));
+	if(tmp2 == NULL)
+		return 9;
 
-	if(tmp == NULL)
-		return 1; //Errore, nodo non trovato
+	tmp2 = scegli(find(start, name, &tmp, &index), index);
+	if(tmp2 == NULL)
+		return 1;
 
-	if(tmp->morto == 1)
+	if(tmp2->morto == 1)
 		return 12;
-		
+
 	else
 	{
-		int ris = closeMe(tmp, 0);
+		int ris = closeMe(tmp2, 0);
 
 		return ris;
 	}
@@ -737,19 +806,23 @@ void errorquit(Node* start){
 //Funzione che clona un certo processo
 int pspawn(Node* start, char* name, int multiSpawn) {
 	//Cerco il processo da clonare
-	Node *tmp = (Node*)calloc(1, sizeof(Node));
+	Node** tmp = (Node**)calloc(0, sizeof(Node));
 	if(tmp == NULL)
 		return 9;
 
-	tmp = cerca(start, name);
+	int index = 0;
+	Node* tmp2 = (Node*)calloc(1, sizeof(Node));
+	if(tmp2 == NULL)
+		return 9;
 
-	if(tmp == NULL)
-		return 1; //Errore, nodo non trovato
-	else if (tmp->morto == 1)
+	tmp2 = scegli(find(start, name, &tmp, &index), index);
+	if(tmp2 == NULL)
+		return 1;
+	else if (tmp2->morto == 1)
 		return 12;
 	else
 	{
-		tmp->numCloni++;
+		tmp2->numCloni++;
 
 		char* childrenName = (char*)calloc(strlen(name) + 5, sizeof(char));
 		if(childrenName == NULL)
@@ -757,15 +830,15 @@ int pspawn(Node* start, char* name, int multiSpawn) {
 
 		childrenName = strcat(childrenName, name);
 
-		if(tmp->nFigli > 0)
-			snprintf(childrenName, strlen(childrenName) + 6, "%s%s%d", tmp->name, "_", tmp->numCloni);
+		if(tmp2->nFigli > 0)
+			snprintf(childrenName, strlen(childrenName) + 6, "%s%s%d", tmp2->name, "_", tmp2->numCloni);
 		else
 			childrenName = strcat(childrenName,"_1");
 
 		if(multiSpawn == 0)
-			return pnew(tmp, childrenName, 1);
+			return pnew(tmp2, childrenName, 1);
 		else
-			return pnew(tmp, childrenName, 2);
+			return pnew(tmp2, childrenName, 2);
 	}
 }
 
@@ -793,18 +866,31 @@ int prePSpawn(Node* start, char* name, char* option){
 }
 
 //Funzione per chiudere tutto partendo da un nome
-int prmall(Node* start, char* name) {
-	Node *tmp = (Node*)calloc(1, sizeof(Node));
+int prmall(Node* start, char* name, int flagDoControlli) {
+	Node** tmp = (Node**)calloc(0, sizeof(Node));
 	if(tmp == NULL)
 		return 9;
 
-	tmp = cerca(start, name);
-	if(tmp == NULL)
-		return 1; //Errore, nodo non trovato
-	if(tmp->morto == 1)
+	int index = 0;
+	Node* tmp2 = (Node*)calloc(1, sizeof(Node));
+	if(tmp2 == NULL)
+		return 9;
+
+	if(flagDoControlli == 0)
+		tmp2 = scegli(find(start, name, &tmp, &index), index);
+	else
+	{
+		find(start, name, &tmp, &index);
+		if(tmp == NULL)
+			return 1;
+		tmp2 = tmp[0];
+	}
+	if(tmp2 == NULL)
+		return 1;
+	if(tmp2->morto == 1)
 		return 12;
 	else
-		return closeAll(tmp, 0);
+		return closeAll(tmp2, 0);
 }
 
 //Funzione per chiudere correttamente processi e shell
@@ -840,7 +926,7 @@ int wildcard(char *string, char *pattern) {
 		switch(*pattern)
 		{
 			case '*':
-				
+
 				do {
 					++pattern;
 				} while(*pattern == '*');
@@ -850,7 +936,7 @@ int wildcard(char *string, char *pattern) {
 
 				while(*string != '\0')
 				{
-					
+
 					if(*pattern != *string)
 						string++;
 					else
@@ -861,7 +947,7 @@ int wildcard(char *string, char *pattern) {
 							string++;
 					}
 				}
-				
+
 				return 0;
 
 			default :
@@ -879,7 +965,7 @@ int wildcard(char *string, char *pattern) {
 				}
 				if(*string!='\0')
 					return 0;
-					
+
 				return 1;
 				break;
 		}
@@ -902,14 +988,14 @@ int pCloseWildCard(Node* padre, char* nome) {
 		n = padre->nFigli;
 
 		if(wildcard(padre->figli[i]->name,nome) == 1)
-			ris = prmall(padre,padre->figli[i]->name);
+			ris = prmall(padre, padre->figli[i]->name, 1);
 		else
 			ris = pCloseWildCard(padre->figli[i], nome);
 
 		if(ris != 0)
 			return ris;
 
-		
+
 		if (n == padre->nFigli)
 			i++;
 	}
@@ -921,10 +1007,10 @@ int pCloseWildCard(Node* padre, char* nome) {
 int prePClose(Node* padre, char* attributo) {
 	if(strstr(attributo, "*") == NULL)
 		return pClose(padre, attributo);
-	
+
 	if(attributo[0] != '*' && attributo[strlen(attributo) - 1] != '*')
 		return 5;
-	
+
 	else
 	{
 		char nome[strlen(attributo) + 2];
@@ -941,7 +1027,7 @@ int prePClose(Node* padre, char* attributo) {
 			else
 				i++;
 		}
-		
+
 		nome[j] = '\0';
 
 		int r = pCloseWildCard(padre,attributo);

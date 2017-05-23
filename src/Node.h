@@ -45,7 +45,7 @@ int pinfo(Node*,char *);
 int prePClose(Node*, char*);
 int quit(Node*);
 int pspawn(Node*, char*, int);
-int prmall(Node*, char*);
+int prmall(Node*, char*, int);
 void ptree(Node*, int, char*);
 
 #endif
