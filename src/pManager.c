@@ -46,9 +46,6 @@ void gestisciErrori(int error) {
 		case 3:
 			printf(ANSI_COLOR_RED "Nome non consentito!\n" ANSI_COLOR_RESET);
 			break;
-		case 4:
-			printf(ANSI_COLOR_RED "Nome non valido, rimuovi il carattere _\n" ANSI_COLOR_RESET);
-			break;
 		case 5:
 			printf(ANSI_COLOR_GREEN "Comando non trovato, usa " ANSI_COLOR_RESET "phelp " ANSI_COLOR_GREEN "per la lista dei comandi!\n" ANSI_COLOR_RESET);
 			break;
@@ -67,9 +64,9 @@ void gestisciErrori(int error) {
 			printf(ANSI_COLOR_RED "Comando non eseguito\n" ANSI_COLOR_RESET);
 			break;
 		case 10:
-			sleep(2);
+			sleep(1);
 			printf(ANSI_COLOR_RED "Procedo alla terminazione di tutti i processi:\n");
-			sleep(2);
+			sleep(1);
 			errorquit(padre);
 			printf(ANSI_COLOR_MAGENTA "FATAL ERROR, prova di nuovo, sarai più fortuanto\n" ANSI_COLOR_RESET);
 			system("rm -f assets/Lettura_*; rm -f assets/Scrittura_*; rm src/tmp;");
@@ -130,11 +127,7 @@ int psystem(char *line) {
 			else if(strcmp(comando, "quit") == 0)
 			{
 				quit(padre);
-				return 1;
-			}
-			else if(strcmp(comando, "errorquit") == 0)
-			{
-				errorquit(padre);
+				sleep(1);
 				return 1;
 			}
 			else if(strcmp(comando, "pexport") == 0)
@@ -162,14 +155,9 @@ int psystem(char *line) {
 			}
 			else if(strcmp(comando, "pnew") == 0)
 			{
-				if(strstr(attributo, "_") == NULL)
-				{
-					int ris = pnew(padre, attributo, 0);
-					if(ris != 0)
-						gestisciErrori(ris);
-				}
-				else
-					gestisciErrori(4);
+				int ris = pnew(padre, attributo, 0);
+				if(ris != 0)
+					gestisciErrori(ris);
 			}
 			else if(strcmp(comando, "pinfo") == 0)
 			{

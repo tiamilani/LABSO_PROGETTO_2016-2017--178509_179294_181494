@@ -37,7 +37,10 @@ struct Node{
 	int morto;
 };
 
+Node *padre;
+
 Node* init();
+Node* cercaPid(Node*, int);
 char* phelp();
 int plist(Node*, char*);
 int pnew(Node*, char*, int);

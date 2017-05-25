@@ -11,13 +11,14 @@ TESTO=Mattia Milani\t\t178509\nFederico Brugiolo\t179294\nAndrea Fadi\t\t181494\
 FILE_DIR_FIND=src/
 FILE_DIR_SAVE=build/
 FILE_DIR_OTHER=assets/
+FILE_DIR_PIPE=pipe/
 MAIN_EXE=pmanager
 MAIN_FILE=pManager.c
 CHILD_EXE=child
 CHILD_FILE=child.c
 FILE_TEST=input.txt
-#TESTO_TEST=pnew andreamattiafederico01\npnew andreamattiafederico02\npnew andreamattiafederico03\npspawn andreamattiafederico03 6\npspawn andreamattiafederico03_3 6\npspawn andreamattiafederico03_3_3 4\npspawn andreamattiafederico03_3_3_2 4\npspawn andreamattiafederico03_3_3_2 4\npspawn andreamattiafederico03_3_3_2_2 2\npspawn andreamattiafederico03_3_3_2_2_1 2\npspawn andreamattiafederico03_3_3_2_2_1_1\npnew andreamattiafederico04\npnew andreamattiafederico05\npnew andreamattiafederico06\npspawn andreamattiafederico06 6\npspawn andreamattiafederico06_3 6\npspawn andreamattiafederico06_3_3 4\npspawn andreamattiafederico06_3_3_2 4\npspawn andreamattiafederico06_3_3_2_2 4\npspawn andreamattiafederico06_3_3_2_2_2 2\npspawn andreamattiafederico06_3_3_2_2_2_1 2\npspawn andreamattiafederico06_3_3_2_2_2_1_1\npnew andreamattiafederico07\npnew andreamattiafederico08\npnew andreamattiafederico09
-TESTO_TEST=pnew ciao\npspawn ciao 10\npnew ciao
+TESTO_TEST=pnew mattia\npspawn mattia 1\npspawn mattia_1 10\npspawn mattia_1_5 5\npspawn mattia_1_5_3 7\npspawn mattia_1_5_3_4 6\npspawn mattia_1_5_3_4_3 5\npspawn mattia_1_5_3_4_3_2 4\npspawn mattia_1_5_3_4_3_2_2 3\npspawn mattia_1_5_3_4_3_2_2_1 3\npspawn mattia_1_5_3_4_3_2_2_1_2 2\npspawn mattia_1_5_3_4_3_2_2_1_2_1 2\npspawn mattia_1_5_3_4_3_2_2_1_2_1_1 2\npspawn mattia_1_5_3_4_3_2_2_1_2_1_1_1 2\npnew federico\npnew mattia_1\npnew andrea\npspawn andrea 8\npspawn andrea_4 8\npnew progetoSistemiOperativi\npspawn federico 40\npnew federico\npnew federico\npnew mattia_1_5_2\npnew federico\npnew andrea
+#TESTO_TEST=pnew ciao\npspawn ciao 10\npnew ciao
 TMP_FILE=src/tmp
 
 .PHONY: clean build assets test
@@ -27,6 +28,7 @@ help:
 
 tmp:
 	@rm -f $(TMP_FILE)
+	@rm -rf $(FILE_DIR_PIPE)
 	@echo "File di cache rimossi!"
 
 clean:

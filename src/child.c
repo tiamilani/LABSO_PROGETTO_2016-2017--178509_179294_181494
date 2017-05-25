@@ -62,6 +62,7 @@ int writePipe(char* nomePipe, char* str) {
 		return 10;
 
 	int n = write (fd, str, strlen(str)); /* Write message down pipe */
+
 	if(n < 0)
 		return 10;
 
@@ -127,15 +128,15 @@ int main (int argc, char* argv[])
 		if(readPipe(status)!= 0)
 			return 0;
 
-
 		if(strlen(status) > 4)
+		{
 			if(generaFiglio(status) != 0)
 			{
 				strcpy(message,"IMPOSSIBILE AVVIARE IL FIGLIO");
 				if(writePipe(pipeLettura, message) != 0)
 					return 0;
 			}
-
+		}
 	} while(strcmp(status, "EXIT") != 0);
 
 	sprintf(message, "Processo <%s> terminato", argv[1]);
@@ -144,6 +145,6 @@ int main (int argc, char* argv[])
 
 	unlink(pipeLettura);
 	unlink(pipeScrittura);
-
+	
 	exit(0);
 }

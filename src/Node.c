@@ -28,7 +28,7 @@ char* phelp() {
 }
 
 //Legge una stringa dalla pipe che gli viene passata
-int readLine (int idPipeLettura,char *str) {
+int readLine (int idPipeLettura, char *str) {
 	int n;
 
 	do {  //Read characters until '\0' or end-of-input
@@ -226,13 +226,6 @@ int pinfo(Node* n, char* str) {
 		strcat(str,ANSI_COLOR_RESET);
 	}
 
-	/*struct rusage * r;
-	getrusage(n->systemPid,r);
-	strcat(str,"tempo attivo:\t\t");
-	snprintf(tmp,MAXLEN, "%ld.%06ld\n", r->ru_stime.tv_sec, r->ru_stime.tv_usec);
-	strcat(str,tmp);
-	strcat(str,"\n");*/
-
 	return 0;
 }
 
@@ -355,6 +348,29 @@ Node* cerca(Node *start, char* name) {
 		for(i = 0; i < start->nFigliMorti; i++)
 		{
 			Node* tmp = cerca(start->figliMorti[i], name);
+			if(tmp != NULL)
+				return tmp;
+		}
+
+		return NULL;
+	}
+}
+
+Node* cercaPid(Node *start, int pid) {
+	if(start->systemPid == pid)
+		return start;
+	else
+	{
+		int i = 0;
+		for(i = 0; i < start->nFigli; i++)
+		{
+			Node* tmp = cercaPid(start->figli[i], pid);
+			if(tmp != NULL)
+				return tmp;
+		}
+		for(i = 0; i < start->nFigliMorti; i++)
+		{
+			Node* tmp = cercaPid(start->figliMorti[i], pid);
 			if(tmp != NULL)
 				return tmp;
 		}
@@ -678,6 +694,8 @@ int fatherCloseMe(Node* father, char* pid, int flag, int multiQuit) {
 			break;
 	}
 
+	tmp->morto = 1;
+
 	if(flag == 0)
 	{
 		if(signal(SIGCHLD, SIG_IGN) == SIG_ERR)
@@ -697,8 +715,6 @@ int fatherCloseMe(Node* father, char* pid, int flag, int multiQuit) {
 		if(multiQuit != 1)
 			printf("%s\n", test);
 	}
-
-	tmp->morto = 1;
 
 	if(spostaSulVettoreDeiMorti(i,father) != 0)
 		return 10;
@@ -801,7 +817,7 @@ void errorquit(Node* start){
  	}
 
   	free(start);
-  }
+}
 
 //Funzione che clona un certo processo
 int pspawn(Node* start, char* name, int multiSpawn, Node* chose) {
@@ -928,7 +944,7 @@ int quit(Node* start) {
 	}
 	fflush(stdout);
 	printf("\rQuitting... %d %% -> DONE\n", 100);
-
+	
 	free(start);
 	printf("Chiusura di tutti i processi avvenuta.\n");
 
@@ -1103,7 +1119,8 @@ int pexport(Node* nodo){
 
 //Funzione per inizializzare il nodo padre
 Node* init() {
-	Node *padre = (Node*)calloc(1,sizeof(Node));
+
+	padre = (Node*)calloc(1,sizeof(Node));
 	if(padre!=NULL){
 		padre->pid = contPid;
 		padre->systemPid = getpid();
